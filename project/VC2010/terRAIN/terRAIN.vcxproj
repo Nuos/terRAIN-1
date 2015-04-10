@@ -1,0 +1,221 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9A4B5496-4E5B-4412-A137-B54A6E2583DC}</ProjectGuid>
+    <RootNamespace>terRAIN</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\..\..\bin\VC2010\Debug\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IntDir>.\..\..\bin\VC2010\Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\..\..\bin\VC2010\Release\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IntDir>.\..\..\bin\VC2010\Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\..\..\..\ext\;.\..\..\..\source\;.\..\..\..\source\OperationInterface;.\..\..\..\source\Exception;.\..\..\..\source\Parallelize;.\..\..\..\source\Operations;.\..\..\..\source\Utils;.\..\..\..\source\simulations;.\..\..\..\source\geo;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>.\..\..\..\ext\lib\</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>.\..\..\..\ext\;.\..\..\..\source\;.\..\..\..\source\OperationInterface;.\..\..\..\source\Exception;.\..\..\..\source\Parallelize;.\..\..\..\source\Operations;.\..\..\..\source\Utils;.\..\..\..\source\simulations;.\..\..\..\source\geo;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>.\..\..\..\ext\lib\</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\Exception\exception_base.cpp" />
+    <ClCompile Include="..\..\..\source\Exception\exOperandsNotCompatibile.cpp" />
+    <ClCompile Include="..\..\..\source\geo\trPoint3d.cpp" />
+    <ClCompile Include="..\..\..\source\main.cpp" />
+    <ClCompile Include="..\..\..\source\OperationInterface\OperationInterface.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\accfluxFuncT.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\accfluxfunctions.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\BinaryMatrixFunc.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\CollectTouchedRasters.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\Coordinates.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\DoubleUtil.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\DrainGraph.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\DrainGraphRootCollection.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\DrinGraphNode.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\FillMLDDPits.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\FillPITs.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\InterpolateRasterToSquares.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\longestFlowPathLengthFunctors.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MarkTouchedRasters.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MLDDFunctions.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\ModelParams.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MultiflowAccflux.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MultiflowAccfluxOnDrainGraph.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MultiflowLDD.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MxAbs.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\MxAdd.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\Region.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\spreadLDD.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\spreadLDDMax.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\UnaryMLDDFunc.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\utils.cpp" />
+    <ClCompile Include="..\..\..\source\Parallelize\Paralellize.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\Borzsony.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\EffusionTestSimulation.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\FixedTimeStepRunFallRunOff.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\LEM.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\Morphometry.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\ParamFileHandler.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\ParamHandler.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\SimpleErosion.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\Simulation.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\SimulationRegistry.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\TestSimulation.cpp" />
+    <ClCompile Include="..\..\..\source\Utils\FileUtil.cpp" />
+    <ClCompile Include="..\..\..\source\Utils\StatFile.cpp" />
+    <ClCompile Include="..\..\..\source\Utils\Timer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\source\Exception\exception_base.h" />
+    <ClInclude Include="..\..\..\source\Exception\exDifferentMatrices.h" />
+    <ClInclude Include="..\..\..\source\Exception\exOperandsNotCompatibile.h" />
+    <ClInclude Include="..\..\..\source\Exception\exParalellize.h" />
+    <ClInclude Include="..\..\..\source\geo\trPoint3d.h" />
+    <ClInclude Include="..\..\..\source\OperationInterface\OperationInterface.h" />
+    <ClInclude Include="..\..\..\source\Operations\accfluxBase.h" />
+    <ClInclude Include="..\..\..\source\Operations\accfluxdefs.h" />
+    <ClInclude Include="..\..\..\source\Operations\accfluxFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\accfluxfunctions.h" />
+    <ClInclude Include="..\..\..\source\Operations\BinaryMatrixFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\BinaryMatrixFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\BinaryWindowFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\BinaryWindowFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\ChainCodeData.h" />
+    <ClInclude Include="..\..\..\source\Operations\CollectTouchedRasters.h" />
+    <ClInclude Include="..\..\..\source\Operations\ConstantMarkFunction.h" />
+    <ClInclude Include="..\..\..\source\Operations\Coordinates.h" />
+    <ClInclude Include="..\..\..\source\Operations\defs.h" />
+    <ClInclude Include="..\..\..\source\Operations\DoubleUtil.h" />
+    <ClInclude Include="..\..\..\source\Operations\DrainGraph.h" />
+    <ClInclude Include="..\..\..\source\Operations\DrainGraphNode.h" />
+    <ClInclude Include="..\..\..\source\Operations\DrainGraphNodeData.h" />
+    <ClInclude Include="..\..\..\source\Operations\DrainGraphNodeDataFactory.h" />
+    <ClInclude Include="..\..\..\source\Operations\DrainGraphRootCollection.h" />
+    <ClInclude Include="..\..\..\source\Operations\FillMLDDPits.h" />
+    <ClInclude Include="..\..\..\source\Operations\FillPITs.h" />
+    <ClInclude Include="..\..\..\source\Operations\functors.h" />
+    <ClInclude Include="..\..\..\source\Operations\InterpolateRasterToSquares.h" />
+    <ClInclude Include="..\..\..\source\Operations\ItemDescriptor.h" />
+    <ClInclude Include="..\..\..\source\Operations\longestFlowPathLengthDefs.h" />
+    <ClInclude Include="..\..\..\source\Operations\longestflowpathlengthFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\longestFlowPathLengthFunctors.h" />
+    <ClInclude Include="..\..\..\source\Operations\MarkCondition.h" />
+    <ClInclude Include="..\..\..\source\Operations\MarkFunction.h" />
+    <ClInclude Include="..\..\..\source\Operations\MarkIfNotMarked.h" />
+    <ClInclude Include="..\..\..\source\Operations\MarkTouchedRasters.h" />
+    <ClInclude Include="..\..\..\source\Operations\matrix.h" />
+    <ClInclude Include="..\..\..\source\Operations\MatrixFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\MLDDFunctions.h" />
+    <ClInclude Include="..\..\..\source\Operations\MLDDWalkFunction.h" />
+    <ClInclude Include="..\..\..\source\Operations\ModelParams.h" />
+    <ClInclude Include="..\..\..\source\Operations\MultiflowAccflux.h" />
+    <ClInclude Include="..\..\..\source\Operations\MultiflowAccfluxOnDrainGraph.h" />
+    <ClInclude Include="..\..\..\source\Operations\MultiflowDMatrix.h" />
+    <ClInclude Include="..\..\..\source\Operations\MultiflowLDD.h" />
+    <ClInclude Include="..\..\..\source\Operations\MxAbs.h" />
+    <ClInclude Include="..\..\..\source\Operations\MxAdd.h" />
+    <ClInclude Include="..\..\..\source\Operations\paralellisable.h" />
+    <ClInclude Include="..\..\..\source\Operations\rastermatrix.h" />
+    <ClInclude Include="..\..\..\source\Operations\RasterPosition.h" />
+    <ClInclude Include="..\..\..\source\Operations\RasterPositionFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\RasterPositionFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\RasterPositionFunctors.h" />
+    <ClInclude Include="..\..\..\source\Operations\RasterPositionMatrix.h" />
+    <ClInclude Include="..\..\..\source\Operations\Region.h" />
+    <ClInclude Include="..\..\..\source\Operations\SimpleMatrixFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\SimpleMxOperations.h" />
+    <ClInclude Include="..\..\..\source\Operations\spreadLDD.h" />
+    <ClInclude Include="..\..\..\source\Operations\spreadLDDMax.h" />
+    <ClInclude Include="..\..\..\source\Operations\StreamFuncDefs.h" />
+    <ClInclude Include="..\..\..\source\Operations\StreamFunctors.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryMatrixFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryMatrixFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryMLDDFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryMLDDFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryWindowFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\UnaryWindowFuncT.h" />
+    <ClInclude Include="..\..\..\source\Operations\utils.h" />
+    <ClInclude Include="..\..\..\source\Operations\WindowIterator.h" />
+    <ClInclude Include="..\..\..\source\Operations\WindowOperationFunctors.h" />
+    <ClInclude Include="..\..\..\source\Operations\XStreamFunc.h" />
+    <ClInclude Include="..\..\..\source\Operations\XStreamFuncT.h" />
+    <ClInclude Include="..\..\..\source\Parallelize\Paralellize.h" />
+    <ClInclude Include="..\..\..\source\simulations\Borzsony.h" />
+    <ClInclude Include="..\..\..\source\simulations\EffusionTestSimulation.h" />
+    <ClInclude Include="..\..\..\source\simulations\FixedTimeStepRunFallRunOff.h" />
+    <ClInclude Include="..\..\..\source\simulations\LEM.h" />
+    <ClInclude Include="..\..\..\source\simulations\Morphometry.h" />
+    <ClInclude Include="..\..\..\source\simulations\ParameterException.h" />
+    <ClInclude Include="..\..\..\source\simulations\ParamFileHandler.h" />
+    <ClInclude Include="..\..\..\source\simulations\ParamHandler.h" />
+    <ClInclude Include="..\..\..\source\simulations\ParamNames.h" />
+    <ClInclude Include="..\..\..\source\simulations\SimpleErosion.h" />
+    <ClInclude Include="..\..\..\source\simulations\Simulation.h" />
+    <ClInclude Include="..\..\..\source\simulations\SimulationException.h" />
+    <ClInclude Include="..\..\..\source\simulations\SimulationRegistry.h" />
+    <ClInclude Include="..\..\..\source\simulations\TestSimulation.h" />
+    <ClInclude Include="..\..\..\source\Utils\FileUtil.h" />
+    <ClInclude Include="..\..\..\source\Utils\StatFile.h" />
+    <ClInclude Include="..\..\..\source\Utils\Timer.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

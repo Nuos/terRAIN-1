@@ -309,6 +309,7 @@ public:
 
 
 typedef rastermatrix<double> DblRasterMx;
+typedef rastermatrix<int> IntRasterMx;
 
 }
 #endif RASTERMATRIX_H

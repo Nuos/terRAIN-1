@@ -115,6 +115,7 @@
     <ClCompile Include="..\..\..\source\simulations\ParamFileHandler.cpp" />
     <ClCompile Include="..\..\..\source\simulations\ParamHandler.cpp" />
     <ClCompile Include="..\..\..\source\simulations\SimpleErosion.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\SimpleRunoff.cpp" />
     <ClCompile Include="..\..\..\source\simulations\Simulation.cpp" />
     <ClCompile Include="..\..\..\source\simulations\SimulationRegistry.cpp" />
     <ClCompile Include="..\..\..\source\simulations\TestSimulation.cpp" />
@@ -207,6 +208,7 @@
     <ClInclude Include="..\..\..\source\simulations\ParamHandler.h" />
     <ClInclude Include="..\..\..\source\simulations\ParamNames.h" />
     <ClInclude Include="..\..\..\source\simulations\SimpleErosion.h" />
+    <ClInclude Include="..\..\..\source\simulations\SimpleRunoff.h" />
     <ClInclude Include="..\..\..\source\simulations\Simulation.h" />
     <ClInclude Include="..\..\..\source\simulations\SimulationException.h" />
     <ClInclude Include="..\..\..\source\simulations\SimulationRegistry.h" />

@@ -9,7 +9,8 @@
 #include "FillPITs.h"
 #include "MultiflowAccflux.h"
 #include "MultiflowAccfluxOnDrainGraph.h"
-
+#include <math.h>
+#include <limits>
 
 
 #ifdef VISUALIZATION
@@ -286,11 +287,11 @@ void semiMultiflowLDD(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPi
 #endif
 		obj.run();
 
-		MultiflowLDD Obj(1.0, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,true);
+		MultiflowLDD Obj(1.0, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,true,false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(1.0, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,true);
+		MultiflowLDD Obj(1.0, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,true, false);
 
 		_RUN(Obj)
 	}
@@ -313,11 +314,11 @@ void multiflowLDD(double a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool b
 #endif
 		obj.run();
 
-		MultiflowLDD Obj(a, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false);
+		MultiflowLDD Obj(a, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false, false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(a, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false);
+		MultiflowLDD Obj(a, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false, false);
 
 		_RUN(Obj)
 	}
@@ -341,11 +342,11 @@ void multiflowLDD(DblRasterMx a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, b
 #endif
 		obj.run();
 
-		MultiflowLDD Obj(mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false,a.begin());
+		MultiflowLDD Obj(mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false,a.begin(), false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false,a.begin());
+		MultiflowLDD Obj(mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false,a.begin(), false);
 
 		_RUN(Obj)
 	}
@@ -913,7 +914,7 @@ void sum_of_upstreamdiffs(MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterM
 		double sum = 0.0;
 		double sumOfInCome = 0.0;
         currentVal = *imx;
-		for (char i = 0; i < 9; i++) {
+		for (char i = 1; i < 10; i++) {
 			if (i==5)
 				continue;
 			
@@ -942,6 +943,226 @@ void sum_of_upstreamdiffs(MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterM
 		}
 		*imxRet = sumOfInCome > 0.0 ? sum/sumOfInCome  : 0.0;
 	}
+}
+
+bool compute_flux_distribution(MultiflowDMatrix & mxLDD, DblRasterMx & mxFlux, MultiflowDMatrix & mxRet)
+{
+	mxRet.initlike(mxLDD);
+	DoubleChainCodeData initValue(0.0);
+	mxRet.fill(initValue);
+
+	if (mxLDD.getColNr()!=mxFlux.getColNr() || mxLDD.getRowNr()!=mxFlux.getRowNr())
+		return false;
+
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator iFlux = mxFlux.begin();
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
+
+	for (; iLDD != endLDD; ++iLDD, ++iFlux, ++iRet) {
+		double currentFluid = *iFlux;
+		for (char i = 1; i < 9; i++) {
+			if (i==5)
+				continue;
+			if (!iLDD.isValidItemByChainCode(i))
+				continue;
+			
+			double flux = currentFluid * iLDD->getByChainCode(i);
+			iRet->setByChainCode(i, flux);
+		}
+	
+	}
+
+	return true;
+}
+
+void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits)
+{
+	mxRet.initlike(mxOp);
+
+	if (bFillPits){
+		DblRasterMx mx1;
+
+#ifdef PARALELL_MODUL
+		//FillPITs obj(mxOp,mx1,nThreadNr);
+		FillPITs obj(mxOp,mx1,1);
+#else	
+		FillPITs obj(mxOp,mx1,1);
+#endif
+		obj.run();
+
+		MultiflowLDD Obj(1.0, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false, true);
+
+		_RUN(Obj)
+	}else{
+		MultiflowLDD Obj(1.0, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false, true);
+
+		_RUN(Obj)
+	}
+}
+
+double compute_velocity_mldd(MultiflowDMatrix & fluxDistribution, MultiflowDMatrix & flowAngles, double c,  MultiflowDMatrix & mxVelocity)
+{
+	mxVelocity.initlike(fluxDistribution);
+	DoubleChainCodeData initValue(0.0);
+	mxVelocity.fill(initValue);
+
+	MultiflowDMatrix::iterator iFluxDist = fluxDistribution.begin(), endFluxDist = fluxDistribution.end();
+	MultiflowDMatrix::iterator iAngles = flowAngles.begin();
+	MultiflowDMatrix::iterator iRet = mxVelocity.begin();
+
+	double time_interval = std::numeric_limits<double>::max();
+
+	double cardinalLen = fluxDistribution.getPixelSize();
+	double diagonalLen = cardinalLen * ::sqrt(2.0);
+	for(; iFluxDist!=endFluxDist; ++iFluxDist, ++iAngles, ++iRet) {
+		for (unsigned char cc = 1; cc < 10; ++cc) {
+			if (cc==5)
+				continue;
+			if (!iFluxDist.isValidItemByChainCode(cc))
+				continue;
+
+			double angle = iAngles->getByChainCode(cc);
+			double velocity = 0.0;
+			if (angle > 0.0) {
+				velocity = c * iFluxDist->getByChainCode(cc) * ::sin(angle);
+			}
+			iRet->setByChainCode(cc, velocity);
+
+			if (velocity > 0.0) {
+				double len = (cc==1 || cc==3 || cc==7 || cc==9) ? diagonalLen : cardinalLen;
+				double max_time_interval = len/velocity;
+
+				if (max_time_interval < time_interval)
+					time_interval = max_time_interval;
+			}
+
+		
+		}
+	
+	}
+
+	return time_interval;
+
+}
+
+void compute_outflow_flux_mldd( MultiflowDMatrix & mxVelocity, MultiflowDMatrix & fluxDistribution, double dt, MultiflowDMatrix & mxRet)
+{
+	mxRet.initlike(mxVelocity);
+
+	DoubleChainCodeData initValue(0.0);
+	mxRet.fill(initValue);
+
+	MultiflowDMatrix::iterator iVelocity = mxVelocity.begin(), endVelocity = mxVelocity.end();
+	MultiflowDMatrix::iterator iFlux = fluxDistribution.begin();
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
+
+	double cardinalLen = fluxDistribution.getPixelSize();
+	double diagonalLen = cardinalLen * ::sqrt(2.0);
+
+	for(; iVelocity!=endVelocity; ++iVelocity, ++iFlux, ++iRet) {
+		for (unsigned char cc = 1; cc < 10; ++cc) {
+			if (cc==5)
+				continue;
+			if (!iVelocity.isValidItemByChainCode(cc))
+				continue;
+
+			double velocity = iVelocity->getByChainCode(cc);
+			double full_flux = iFlux->getByChainCode(cc);
+			double len = (cc==1 || cc==3 || cc==7 || cc==9) ? diagonalLen : cardinalLen;
+			double outflow_flux = (velocity * dt * full_flux) / len;
+			iRet->setByChainCode(cc, outflow_flux); 
+		}
+	}
+
+
+}
+
+void compute_material_movement(DblRasterMx & mxMaterial, MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow)
+{
+	mxRetInFlow.initlike(mxMaterial);
+	mxRetInFlow.fill(0.0);
+	mxRetOutFlow.initlike(mxMaterial);
+	mxRetOutFlow.fill(0.0);
+
+	DblRasterMx::iterator iMaterial = mxMaterial.begin(), endMaterial = mxMaterial.end();
+	MultiflowDMatrix::iterator iOutFlow = mxOutFlowFlux.begin();
+	DblRasterMx::iterator iRetInFlow = mxRetInFlow.begin();
+	DblRasterMx::iterator iRetOutFlow = mxRetOutFlow.begin();
+
+	for (; iMaterial!=endMaterial; ++iMaterial, ++iOutFlow, ++iRetInFlow, ++iRetOutFlow) {
+		double sumOutflow = 0.0;
+		for (unsigned char cc = 1; cc < 10; ++cc) {
+			if (cc==5)
+				continue;
+			double outflow = iOutFlow->getByChainCode(cc);
+			if (outflow > 0.0) {
+				sumOutflow+=outflow;
+				DblRasterMx::iterator cc_neighbour;
+				iRetInFlow.neighbourIterator(cc, cc_neighbour);
+				(*cc_neighbour)+=outflow;
+			}
+		}
+		*iRetOutFlow = sumOutflow;
+	}
+}
+
+void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret)
+{
+	ret.initlike(mx);
+	ret.fill(notSpecPoint);
+
+	DblRasterMx::iterator imx = mx.begin(), endmx = mx.end();
+	IntRasterMx::iterator iRet = ret.begin();
+
+	for( ; imx != endmx; ++imx, ++iRet) {
+		int nr_of_local_mins = 0;
+		int nr_of_local_maxs = 0;
+		bool isPeak = true;
+		double current_val = *imx;
+		for (unsigned char cc = 1; cc < 10; ++cc) {
+			if (cc==5)
+				continue;
+			
+			unsigned char cc_next = cc==9 ? 1 : cc + 1;
+			unsigned char cc_prev = cc==1 ? 9 : cc - 1;
+
+			if (imx.isValidItemByChainCode(cc)) {
+				double cc_val = imx.chain_code(cc);
+				if (cc_val >= current_val) 
+					isPeak = false;
+
+				if (imx.isValidItemByChainCode(cc_next) && imx.isValidItemByChainCode(cc_prev)) {
+					double cc_prev_val = imx.chain_code(cc_prev);
+					double cc_next_val = imx.chain_code(cc_next);
+
+					if (cc_prev_val < cc_val && cc_next_val < cc_val )
+						++nr_of_local_maxs;
+
+					if (cc_prev_val > cc_val && cc_next_val > cc_val )
+						++nr_of_local_mins;
+
+				}
+			}
+		}
+
+		int pixel_type = 0;
+
+		if ((spec_points & ridge) && nr_of_local_mins > 1 && nr_of_local_maxs > 0)
+			pixel_type |= ridge;
+
+		if ((spec_points & peak) && isPeak)
+			pixel_type |= peak;
+
+		if ((spec_points & col) && nr_of_local_mins > 1 && nr_of_local_maxs == 2)
+			pixel_type |= peak;
+
+		if ((spec_points & ditch) && nr_of_local_mins > 0 && nr_of_local_maxs > 1)
+			pixel_type |= ditch;	
+
+		*iRet = pixel_type;
+	}
+
+
 }
 
 }

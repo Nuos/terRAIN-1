@@ -156,6 +156,24 @@ DblRasterMx operator/(DblRasterMx & op1, DblRasterMx & op2);
 DblRasterMx operator*(DblRasterMx & op1, DblRasterMx & op2);
 DblRasterMx operator^(DblRasterMx & op1, DblRasterMx & op2);
 
+bool compute_flux_distribution(MultiflowDMatrix & mxLDD, DblRasterMx & mxFlux, MultiflowDMatrix & mxRet);
+void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits);
+double compute_velocity_mldd(MultiflowDMatrix & fluxDistribution, MultiflowDMatrix & flowAngles, double c,  MultiflowDMatrix & mxVelocity);
+void compute_outflow_flux_mldd( MultiflowDMatrix & mxVelocity, MultiflowDMatrix & fluxDistribution, double dt, MultiflowDMatrix & mxRet);
+void compute_material_movement(DblRasterMx & mxMaterial, MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow);
+
+
+enum SpecialPoint
+{
+	notSpecPoint = 0,
+	ridge = 1,
+	peak = 1 << 1,
+	col = 1 << 2, //nyereg
+	ditch = 1 << 3 // bevágódás, metszõdés
+};
+
+void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret);
+
 
 
 }

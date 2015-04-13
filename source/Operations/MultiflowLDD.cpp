@@ -79,16 +79,19 @@ void MultiflowLDD::realMultiflowRun()
 				}
 		
 			}else {
-			
+				if (!_returnDegs) {
+					for ( unsigned int i = 0; i < 8; i++ ) {
+						if ( !DoubleUtil::cmpD6((*iRet)(i),0.0) )
+							(*iRet)(i)/=_dblSumDeg;
+					}
+				}
+			}
+		}else {
+			if (!_returnDegs) {
 				for ( unsigned int i = 0; i < 8; i++ ) {
 					if ( !DoubleUtil::cmpD6((*iRet)(i),0.0) )
 						(*iRet)(i)/=_dblSumDeg;
 				}
-			}
-		}else {
-			for ( unsigned int i = 0; i < 8; i++ ) {
-				if ( !DoubleUtil::cmpD6((*iRet)(i),0.0) )
-					(*iRet)(i)/=_dblSumDeg;
 			}
 		}
 		
@@ -162,7 +165,7 @@ void MultiflowLDD::run()
 
 paralellisable * MultiflowLDD::clone() const
 {
-	return new MultiflowLDD(_a,*_pOpBegin,*_pOpEnd,*_pRet,_fillPITS,_singleFlowMode);
+	return new MultiflowLDD(_a,*_pOpBegin,*_pOpEnd,*_pRet,_fillPITS,_singleFlowMode, _returnDegs);
 }
 
 DblRasterMx::iterator & MultiflowLDD::getOpBegin()

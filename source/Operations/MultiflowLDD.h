@@ -24,18 +24,19 @@ protected:
 	double _dblPixelSizeMulSqrt2;
 	bool _fillPITS;
 	bool _singleFlowMode;
+	bool _returnDegs;
 public:
 	
-	MultiflowLDD(double a, DblRasterMx::iterator & iOpBegin, DblRasterMx::iterator & iOpEnd, MultiflowDMatrix::iterator & iRet, bool fillPITS, bool singleFlow):
-		_a(a),_pOpBegin(&iOpBegin), _pOpEnd(&iOpEnd), _pRet(&iRet),_dblPixelSize(1.0),_dblPixelSizeMulSqrt2(1.0),_fillPITS(fillPITS),_singleFlowMode(singleFlow),
+	MultiflowLDD(double a, DblRasterMx::iterator & iOpBegin, DblRasterMx::iterator & iOpEnd, MultiflowDMatrix::iterator & iRet, bool fillPITS, bool singleFlow, bool returnDegs):
+		_a(a),_pOpBegin(&iOpBegin), _pOpEnd(&iOpEnd), _pRet(&iRet),_dblPixelSize(1.0),_dblPixelSizeMulSqrt2(1.0),_fillPITS(fillPITS),_singleFlowMode(singleFlow), _returnDegs(returnDegs),
 		_pMxA(NULL)
 	{
 		initTempVariables();
 	}
 
-	MultiflowLDD(DblRasterMx::iterator & iOpBegin, DblRasterMx::iterator & iOpEnd, MultiflowDMatrix::iterator & iRet, bool fillPITS, bool singleFlow, DblRasterMx::iterator & iMxA):
-		_a(0.0),_pOpBegin(&iOpBegin), _pOpEnd(&iOpEnd), _pRet(&iRet),_dblPixelSize(1.0),_dblPixelSizeMulSqrt2(1.0),_fillPITS(fillPITS),_singleFlowMode(singleFlow),
-		_pMxA(&iMxA)
+	MultiflowLDD(DblRasterMx::iterator & iOpBegin, DblRasterMx::iterator & iOpEnd, MultiflowDMatrix::iterator & iRet, bool fillPITS, bool singleFlow, DblRasterMx::iterator & iMxA, bool returnDegs):
+		_a(0.0),_pOpBegin(&iOpBegin), _pOpEnd(&iOpEnd), _pRet(&iRet),_dblPixelSize(1.0),_dblPixelSizeMulSqrt2(1.0),_fillPITS(fillPITS),_singleFlowMode(singleFlow), 
+		_pMxA(&iMxA), _returnDegs(returnDegs)
 	{
 		initTempVariables();
 	}
@@ -87,8 +88,10 @@ inline void MultiflowLDD::store(unsigned char nChainCode, double dblCurrentVal, 
 		else
 			dblTmp = atan((dblCurrentVal - dblNeighbourVal)/_dblPixelSizeMulSqrt2);
 		
-		dblTmp = std::pow(dblTmp,a);
-		_dblSumDeg+= dblTmp;
+		_dblSumDeg+= dblTmp;	
+		if (!_returnDegs) {
+			dblTmp = std::pow(dblTmp,a);
+		}
 		(*iRet).setByChainCode(nChainCode,dblTmp);
 
 	}else

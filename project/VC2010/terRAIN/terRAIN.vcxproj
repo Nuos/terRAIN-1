@@ -108,6 +108,7 @@
     <ClCompile Include="..\..\..\source\Operations\utils.cpp" />
     <ClCompile Include="..\..\..\source\Parallelize\Paralellize.cpp" />
     <ClCompile Include="..\..\..\source\simulations\Borzsony.cpp" />
+    <ClCompile Include="..\..\..\source\simulations\CompositSimulation.cpp" />
     <ClCompile Include="..\..\..\source\simulations\EffusionTestSimulation.cpp" />
     <ClCompile Include="..\..\..\source\simulations\FixedTimeStepRunFallRunOff.cpp" />
     <ClCompile Include="..\..\..\source\simulations\LEM.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="..\..\..\source\Operations\XStreamFuncT.h" />
     <ClInclude Include="..\..\..\source\Parallelize\Paralellize.h" />
     <ClInclude Include="..\..\..\source\simulations\Borzsony.h" />
+    <ClInclude Include="..\..\..\source\simulations\CompositSimulation.h" />
     <ClInclude Include="..\..\..\source\simulations\EffusionTestSimulation.h" />
     <ClInclude Include="..\..\..\source\simulations\FixedTimeStepRunFallRunOff.h" />
     <ClInclude Include="..\..\..\source\simulations\LEM.h" />

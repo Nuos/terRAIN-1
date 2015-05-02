@@ -51,6 +51,7 @@ bool SimpleRunoff::run()
 	MultiflowDMatrix  mxMultiflowAngles;
 	multiflowAngles(terrain, mxMultiflowAngles,true);
 
+	//legyyen rain intesity
 	double rainSpeed = pixelSize/10000; // [length_unit/time_unit]
 	double amount_of_rain = pixelSize/100; // [length_unit]
 	double accumulated_rain = 0.0; //[length_unit]
@@ -59,6 +60,7 @@ bool SimpleRunoff::run()
 	DblRasterMx mxRain;
 	mapattr(nSizeY+2,nSizeX+2,pixelSize,0.0, mxRain);
 
+	// legyen mxFlowDepth
 	DblRasterMx mxFluid;
 	mapattr(nSizeY+2,nSizeX+2,pixelSize,0.0, mxFluid);
 
@@ -109,8 +111,10 @@ bool SimpleRunoff::run()
 		fluid_outside_of_terrain*= pixelSize*pixelSize;
 		std::cout << "Fluid outside:" << fluid_outside_of_terrain << "/" << rain_full_volume << std::endl;
 
+		/*
 		if ( fluid_outside_of_terrain >=rain_full_volume - DoubleUtil::sDeltaD3)
 			break;
+			*/
 		
 	}
 

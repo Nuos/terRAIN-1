@@ -12,6 +12,7 @@
 #include "Borzsony.h"
 #include "Morphometry.h"
 #include "SimpleRunoff.h"
+#include "CompositSimulation.h"
 
 using namespace TR;
 using namespace SIMULATION;
@@ -42,6 +43,7 @@ int main( int argc, char *argv[])
 		registry.add("borzs", new Borzsony(std::cout,params));
 		registry.add("Morphometry", new Morphometry(std::cout,params));
 		registry.add("SimpleRunoff", new SimpleRunoff(std::cout,params));
+		registry.add("CompositSimulation", new CompositSimulation(std::cout,params));
 		
 		string name = params.paramAsString(SIMULATION_NAME);
 		registry.run(name);

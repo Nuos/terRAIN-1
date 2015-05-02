@@ -227,6 +227,8 @@ void lddcreate(  DblRasterMx & mxOp, DblRasterMx & mxRet,bool bFillPits )
 	
 	mxRet.initlike(mxOp);
 
+	DblRasterMx::iterator iRet = mxRet.begin();
+
 	if (bFillPits){
 		DblRasterMx mx1;
 
@@ -238,11 +240,15 @@ void lddcreate(  DblRasterMx & mxOp, DblRasterMx & mxRet,bool bFillPits )
 #endif
 		obj.run();
 
-		mfLDD Obj(mx1.begin(),mx1.end(),mxRet.begin(),1,mfLDD::typeFunctor());
+		DblRasterMx::iterator iMx1 = mx1.begin(), endMx1 = mx1.end();
+		mfLDD Obj(iMx1,endMx1,iRet,1,mfLDD::typeFunctor());
 
 		_RUN(Obj)
 	}else{
-		mfLDD Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),1,mfLDD::typeFunctor());
+
+		DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+
+		mfLDD Obj(iOp,endOp ,iRet ,1,mfLDD::typeFunctor());
 		_RUN(Obj)
 	}
 }
@@ -251,7 +257,9 @@ void findpits(  DblRasterMx & mxOp, DblRasterMx & mxRet )
 {
 	mxRet.initlike(mxOp);
 	
-	mfFindPITs Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),1,mfFindPITs::typeFunctor());
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	mfFindPITs Obj(iOp ,endOp ,iRet ,1,mfFindPITs::typeFunctor());
 
 	_RUN(Obj)
 }
@@ -273,7 +281,7 @@ void fillpits(  DblRasterMx & mxLDD,DblRasterMx & mxRasters, DblRasterMx & mxRet
 void semiMultiflowLDD(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits)
 {
 	mxRet.initlike(mxOp);
-
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
 	
 
 	if (bFillPits){
@@ -287,11 +295,15 @@ void semiMultiflowLDD(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPi
 #endif
 		obj.run();
 
-		MultiflowLDD Obj(1.0, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,true,false);
+		DblRasterMx::iterator iOp = mx1.begin(), endOp = mx1.end();
+
+		MultiflowLDD Obj(1.0,iOp,endOp, iRet ,bFillPits,true,false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(1.0, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,true, false);
+		DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+
+		MultiflowLDD Obj(1.0,iOp, endOp,iRet,bFillPits,true, false);
 
 		_RUN(Obj)
 	}
@@ -300,7 +312,7 @@ void semiMultiflowLDD(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPi
 void multiflowLDD(double a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits)
 {
 	mxRet.initlike(mxOp);
-
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
 	
 
 	if (bFillPits){
@@ -314,11 +326,13 @@ void multiflowLDD(double a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool b
 #endif
 		obj.run();
 
-		MultiflowLDD Obj(a, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false, false);
+		DblRasterMx::iterator iOp = mx1.begin(), endOp = mx1.end();
+		MultiflowLDD Obj(a, iOp,endOp, iRet,bFillPits,false, false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(a, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false, false);
+		DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+		MultiflowLDD Obj(a, iOp, endOp, iRet,bFillPits,false, false);
 
 		_RUN(Obj)
 	}
@@ -328,7 +342,7 @@ void multiflowLDD(double a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool b
 void multiflowLDD(DblRasterMx a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits)
 {
 	mxRet.initlike(mxOp);
-
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
 	
 
 	if (bFillPits){
@@ -341,12 +355,14 @@ void multiflowLDD(DblRasterMx a, DblRasterMx & mxOp, MultiflowDMatrix & mxRet, b
 		FillPITs obj(mxOp,mx1,1);
 #endif
 		obj.run();
-
-		MultiflowLDD Obj(mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false,a.begin(), false);
+		DblRasterMx::iterator iOp = mx1.begin(), endOp = mx1.end();
+		MultiflowLDD Obj(iOp, endOp,iRet,bFillPits,false,a.begin(), false);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false,a.begin(), false);
+		DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+		DblRasterMx::iterator iA = a.begin();
+		MultiflowLDD Obj(iOp, endOp,iRet,bFillPits,false,iA, false);
 
 		_RUN(Obj)
 	}
@@ -361,7 +377,8 @@ void check_loop( DblRasterMx & mxLDD, DblRasterMx & mxRet)
 	double dblTmp = 0.0;
 	mxRet.fill(dblTmp);
 
-	loopCheckFuncOnLDD Obj(mxLDD.begin(), mxLDD.end(),mxDepth, mxRet );
+	DblRasterMx::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	loopCheckFuncOnLDD Obj(iLDD, endLDD ,mxDepth, mxRet );
 
 	Obj.run();
 }

@@ -99,6 +99,12 @@ void getMatrixPosItems(DblRasterMx & mxOp,RasterPositionMatrix & mxPos,DblRaster
 void diagonal(RasterPositionMatrix & mxPos,DblRasterMx & mxRet);
 void spreadLDD( MultiflowDMatrix & mxLDD, DblRasterMx & mxPoints, DblRasterMx & mxRet,double dblFluxLimitRate );
 void spreadLDDMax( MultiflowDMatrix & mxLDD, DblRasterMx & mxPoints, DblRasterMx & mxRet,double dblFluxLimitRate );
+void findOutflowPITs(DblRasterMx & mx,DblRasterMx & ret);
+void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & flowDepth, MultiflowDMatrix & mxRet);
+
+
+double sediment_velocity(double runoff, double runoff_exponent, double slope, double slope_exponent, double fluvial_const, double diffusive_const, double iter_time);
+double compute_sediment_out(DblRasterMx & mxTerrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mlddd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double max_iter_time, MultiflowDMatrix & mxRet);
 
 template<class T> 
 void saveToCol(rastermatrix<T> & mx, size_t nIter, const char * lpszBaseName)

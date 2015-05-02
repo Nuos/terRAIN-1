@@ -1182,4 +1182,65 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 
 }
 
+void findOutflowPITs(DblRasterMx & mx,DblRasterMx & ret)
+{
+	ret.initlike(mx);
+	ret.fill(0.0);
+	DblRasterMx::iterator iMx = mx.begin(), end = mx.end();
+	DblRasterMx::iterator iRet = ret.begin();
+	for (; iMx != end; ++iMx, ++iRet) {
+		if (iMx.isInOutflowPos()) {
+			bool isPIT = true;
+			double currentVal = *iMx;
+			for (unsigned char cc = 1; cc < 10; ++cc) {
+				double val;
+				if (cc==5)
+					continue;
+				if (iMx.chain_code_safe(cc,val)) {
+					if (val < currentVal) {
+						isPIT = false;
+						break;
+					}
+				}
+			}
+			if (isPIT) {
+				*iRet = 1.0;	
+			}
+		}
+	}
+}
+
+
+void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & flowDepth, MultiflowDMatrix & mxRet)
+{
+	mxRet.initlike(mxVelocity);
+	MultiflowDMatrix::iterator iVelocity = mxVelocity.begin(), endVelocity = mxVelocity.end();
+	DblRasterMx::iterator iFlowDepth = flowDepth.begin();
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
+
+	double pixelSize = mxVelocity.getPixelSize();
+	for (; iVelocity!=endVelocity; ++iVelocity, ++iFlowDepth, ++iRet) {
+		double depth = *iFlowDepth;
+		for (int i = 0; i < 8; ++i) {
+			(*iRet)(i) = (*iVelocity)(i) * depth * pixelSize; 
+		}
+	}
+}
+
+
+double sediment_velocity(double runoff, double runoff_exponent, double slope, double slope_exponent, double fluvial_const, double diffusive_const, double iter_time)
+{
+	return ::pow(runoff, runoff_exponent) * ::pow(slope, slope_exponent) * fluvial_const + diffusive_const*slope;
+}
+
+double compute_sediment_out(DblRasterMx & mxTerrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mlddd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double max_iter_time, MultiflowDMatrix & mxRet)
+{
+	double iter_time = max_iter_time;
+
+
+
+
+	return iter_time;
+}
+
 }

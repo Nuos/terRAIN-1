@@ -50,6 +50,12 @@ bool CompositSimulation::run()
 	double rainTime = 10;
 	double max_iteration_time = 1;
 
+
+	double runoff_exponent = 1.0;
+	double slope_exponent = 2;
+	double fluvial_const = 1.0;
+	double diffusive_const = 1.0;
+
 	// common variables
 	size_t nSizeX = 20;
 	size_t nSizeY = 20;
@@ -61,7 +67,7 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
 	DblRasterMx mxFlowDepth;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxFlowDepth);
-	double elapsedTime = iteration_time;
+	double elapsedTime = 0.0;
 	double elapsedRainTime = 0.0;
 	// base terrain layer (rock based)
 	DblRasterMx rock;
@@ -112,102 +118,141 @@ bool CompositSimulation::run()
 	double waterOnPits = 0.0;
 	while (stopCondition) 
 	{
-		terrain = rock + soil;
-		MultiflowDMatrix runoff_distribution;
-		switch (runoffProductionType)
-		{
-			case rfRainfallRunoff:
+		bool redo_iteration = true;
+		while (redo_iteration) {
+			DblRasterMx copyOfFlowDepth = mxFlowDepth;
+			double copy_of_accumulated_rain = accumulated_rain;
+			double copy_of_elapsedRainTime = elapsedRainTime;
+
+			MultiflowDMatrix runoff_distribution;
+			
+			switch (runoffProductionType)
 			{
-				double rain_time_within_iteration = min(iteration_time, rainTime - elapsedRainTime);
-				double rain = rain_time_within_iteration * rainIntensity;
-				bool isRain = false;
-				if (rain > 0.0) {
-					for (size_t i = 0; i < nSizeY; i++){
-						for (size_t j = 0; j < nSizeX; j++){
-							mxRain(i,j)=rain;	
+				case rfRainfallRunoff:
+				{
+					double rain_time_within_iteration = min(iteration_time, rainTime - copy_of_elapsedRainTime);
+					double rain = rain_time_within_iteration * rainIntensity;
+					bool isRain = false;
+					if (rain > 0.0) {
+						for (size_t i = 0; i < nSizeY; i++){
+							for (size_t j = 0; j < nSizeX; j++){
+								mxRain(i,j)=rain;	
+							}
+						}
+						copyOfFlowDepth = copyOfFlowDepth + mxRain;
+						copy_of_accumulated_rain += rain*pixelSize*pixelSize*nSizeX*nSizeY;
+						copy_of_elapsedRainTime+=rain_time_within_iteration; 
+						isRain = true;
+					}
+					DblRasterMx waterSurface;
+					waterSurface = terrain + copyOfFlowDepth;
+
+					MultiflowDMatrix  mxWaterSurfaceAngles;
+					multiflowAngles(waterSurface, mxWaterSurfaceAngles, true);
+
+					// mldd of water surface
+					MultiflowDMatrix  waterMLDD;
+					multiflowLDD( 1.0, waterSurface, waterMLDD, true);
+
+					MultiflowDMatrix flux_distribution;
+					compute_flux_distribution(waterMLDD, copyOfFlowDepth, flux_distribution);
+
+					MultiflowDMatrix velocity_mldd;
+					double time_interval = compute_velocity_mldd(flux_distribution, mxWaterSurfaceAngles, velocity_coefficent,  velocity_mldd);
+					time_interval = ::min(time_interval, max_iteration_time);
+					iteration_time = ::min(iteration_time, time_interval);
+					MultiflowDMatrix mxOutflowFlux;
+					compute_outflow_flux_mldd( velocity_mldd, flux_distribution, time_interval,mxOutflowFlux);
+
+					DblRasterMx mxInFlow;
+					DblRasterMx mxOutFlow;
+					compute_material_movement(mxOutflowFlux,mxInFlow, mxOutFlow);
+					copyOfFlowDepth = copyOfFlowDepth - mxOutFlow + mxInFlow;
+
+					DblRasterMx::iterator iOutFlowPITs = outflowPITs.begin(), endOutFlowPITS = outflowPITs.end();
+					DblRasterMx::iterator iFlowDepth = copyOfFlowDepth.begin();
+				
+					for (; iOutFlowPITs!=endOutFlowPITS; ++iOutFlowPITs, ++iFlowDepth) {
+						if (*iOutFlowPITs > 0.0) {
+							waterOnPits+= *iFlowDepth * pixelSize * pixelSize;
+							*iFlowDepth = 0.0;
 						}
 					}
-					mxFlowDepth = mxFlowDepth + mxRain;
-					accumulated_rain += rain*pixelSize*pixelSize*nSizeX*nSizeY;
-					elapsedRainTime+=rain_time_within_iteration; 
-					isRain = true;
-				}
-				DblRasterMx waterSurface;
-				waterSurface = terrain + mxFlowDepth;
-
-				MultiflowDMatrix  mxWaterSurfaceAngles;
-				multiflowAngles(waterSurface, mxWaterSurfaceAngles, true);
-
-				// mldd of water surface
-				MultiflowDMatrix  waterMLDD;
-				multiflowLDD( 1.0, waterSurface, waterMLDD, true);
-
-				MultiflowDMatrix flux_distribution;
-				compute_flux_distribution(waterMLDD, mxFlowDepth, flux_distribution);
-
-				MultiflowDMatrix velocity_mldd;
-				double time_interval = compute_velocity_mldd(flux_distribution, mxWaterSurfaceAngles, velocity_coefficent,  velocity_mldd);
-				time_interval = ::min(time_interval, max_iteration_time);
-				iteration_time = time_interval;
-				MultiflowDMatrix mxOutflowFlux;
-				compute_outflow_flux_mldd( velocity_mldd, flux_distribution, time_interval,mxOutflowFlux);
-
-				DblRasterMx mxInFlow;
-				DblRasterMx mxOutFlow;
-				compute_material_movement(mxFlowDepth,mxOutflowFlux,mxInFlow, mxOutFlow);
-				mxFlowDepth = mxFlowDepth - mxOutFlow + mxInFlow;
-
-				DblRasterMx::iterator iOutFlowPITs = outflowPITs.begin(), endOutFlowPITS = outflowPITs.end();
-				DblRasterMx::iterator iFlowDepth = mxFlowDepth.begin();
-				
-				for (; iOutFlowPITs!=endOutFlowPITS; ++iOutFlowPITs, ++iFlowDepth) {
-					if (*iOutFlowPITs > 0.0) {
-						waterOnPits+= *iFlowDepth * pixelSize * pixelSize;
-						*iFlowDepth = 0.0;
+					compute_runoff_distribution( velocity_mldd,copyOfFlowDepth,runoff_distribution);
+					// check only if there is no more rainfall
+					if (!isRain) {
+						std::cout << "volume of fluid in outflow position: = " << waterOnPits << std::endl;
+						if ( fabs(waterOnPits - copy_of_accumulated_rain) < DoubleUtil::sDeltaD3) {
+							stopCondition = false;
+						}
 					}
+					//end of check	
 				}
-				compute_runoff_distribution( velocity_mldd,mxFlowDepth,runoff_distribution);
-				// check only if there is no more rainfall
-				if (!isRain) {
-					std::cout << "volume of fluid in outflow position: = " << waterOnPits << std::endl;
-					if ( fabs(waterOnPits - accumulated_rain) < DoubleUtil::sDeltaD3) {
+				break;
+				case rfCatchmentBasedEstimation:
+				{
+					// mldd of water surface
+					MultiflowDMatrix  terrainMLDD;
+					multiflowLDD( 1.0, terrain, terrainMLDD, true);
+					DblRasterMx mxAccflux;
+					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
+					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);
+
+					if ( elapsedTime >= rainTime) {
 						stopCondition = false;
 					}
+
+					/*if ((iteration_nr % 10) ==0) {
+						printmx(runoff_distribution);
+						printmx(mxAccflux);
+
+					}*/
 				}
-				//end of check	
+				break;
 			}
-			break;
-			case rfCatchmentBasedEstimation:
+
+
+			MultiflowDMatrix  mxMLLDSlope;
+			multiflowAngles(terrain, mxMLLDSlope, true);
+
+			MultiflowDMatrix mxSedimentVelocityMLDD;
+			double max_time_interval_of_sediment_flow = 0.95 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-3, mxSedimentVelocityMLDD);
+			switch (runoffProductionType)
 			{
-				// mldd of water surface
-				MultiflowDMatrix  terrainMLDD;
-				multiflowLDD( 1.0, terrain, terrainMLDD, true);
-				DblRasterMx mxAccflux;
-				accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
-				compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);
-
-				if ( elapsedTime >= rainTime) {
-					stopCondition = false;
-				}
-
-				if ((iteration_nr % 10) ==0) {
-					printmx(runoff_distribution);
-					printmx(mxAccflux);
-
-				}
+				case rfRainfallRunoff:
+					if (iteration_time > max_time_interval_of_sediment_flow) {
+						iteration_time = max_time_interval_of_sediment_flow;
+						continue;
+					}
+				break;
+				case rfCatchmentBasedEstimation:
+					iteration_time = max_time_interval_of_sediment_flow;
+				break;
 			}
-			break;
+			
+
+			MultiflowDMatrix mxSedimentMovement;
+			compute_sediment_flux(mxSedimentVelocityMLDD, iteration_time, mxSedimentMovement); 
+
+			DblRasterMx mxSedIn;
+			DblRasterMx mxSedOut;
+			compute_material_movement(mxSedimentMovement,mxSedIn, mxSedOut);
+
+			rock = rock + mxSedIn - mxSedOut;
+
+			terrain = rock + soil;
+			mxFlowDepth = copyOfFlowDepth;
+			accumulated_rain = copy_of_accumulated_rain;
+			elapsedRainTime = copy_of_elapsedRainTime;
+			redo_iteration = false;
 		}
-
-
-
 
 		elapsedTime+=iteration_time;
 		std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
 		iteration_nr++;
 	}
 
-
+	printmx(rock);
 
 	return true;
 }

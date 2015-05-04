@@ -102,9 +102,9 @@ void spreadLDDMax( MultiflowDMatrix & mxLDD, DblRasterMx & mxPoints, DblRasterMx
 void findOutflowPITs(DblRasterMx & mx,DblRasterMx & ret);
 void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & flowDepth, MultiflowDMatrix & mxRet);
 
+double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double min_elevation_diff, MultiflowDMatrix & mxRet);
+void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt, MultiflowDMatrix & mxRet);
 
-double sediment_velocity(double runoff, double runoff_exponent, double slope, double slope_exponent, double fluvial_const, double diffusive_const, double iter_time);
-double compute_sediment_out(DblRasterMx & mxTerrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mlddd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double max_iter_time, MultiflowDMatrix & mxRet);
 
 template<class T> 
 void saveToCol(rastermatrix<T> & mx, size_t nIter, const char * lpszBaseName)
@@ -166,7 +166,7 @@ bool compute_flux_distribution(MultiflowDMatrix & mxLDD, DblRasterMx & mxFlux, M
 void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits);
 double compute_velocity_mldd(MultiflowDMatrix & fluxDistribution, MultiflowDMatrix & flowAngles, double c,  MultiflowDMatrix & mxVelocity);
 void compute_outflow_flux_mldd( MultiflowDMatrix & mxVelocity, MultiflowDMatrix & fluxDistribution, double dt, MultiflowDMatrix & mxRet);
-void compute_material_movement(DblRasterMx & mxMaterial, MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow);
+void compute_material_movement(MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow);
 
 
 enum SpecialPoint

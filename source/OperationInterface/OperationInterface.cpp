@@ -1094,19 +1094,18 @@ void compute_outflow_flux_mldd( MultiflowDMatrix & mxVelocity, MultiflowDMatrix 
 
 }
 
-void compute_material_movement(DblRasterMx & mxMaterial, MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow)
+void compute_material_movement(MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow)
 {
-	mxRetInFlow.initlike(mxMaterial);
+	mxRetInFlow.initlike(mxOutFlowFlux);
 	mxRetInFlow.fill(0.0);
-	mxRetOutFlow.initlike(mxMaterial);
+	mxRetOutFlow.initlike(mxOutFlowFlux);
 	mxRetOutFlow.fill(0.0);
 
-	DblRasterMx::iterator iMaterial = mxMaterial.begin(), endMaterial = mxMaterial.end();
-	MultiflowDMatrix::iterator iOutFlow = mxOutFlowFlux.begin();
+	MultiflowDMatrix::iterator iOutFlow = mxOutFlowFlux.begin(), endOutFlow = mxOutFlowFlux.end();
 	DblRasterMx::iterator iRetInFlow = mxRetInFlow.begin();
 	DblRasterMx::iterator iRetOutFlow = mxRetOutFlow.begin();
 
-	for (; iMaterial!=endMaterial; ++iMaterial, ++iOutFlow, ++iRetInFlow, ++iRetOutFlow) {
+	for (; iOutFlow!=endOutFlow ; ++iOutFlow, ++iRetInFlow, ++iRetOutFlow) {
 		double sumOutflow = 0.0;
 		for (unsigned char cc = 1; cc < 10; ++cc) {
 			if (cc==5)
@@ -1228,19 +1227,64 @@ void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & f
 }
 
 
-double sediment_velocity(double runoff, double runoff_exponent, double slope, double slope_exponent, double fluvial_const, double diffusive_const, double iter_time)
+double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double min_elevation_diff, MultiflowDMatrix & mxRet)
 {
-	return ::pow(runoff, runoff_exponent) * ::pow(slope, slope_exponent) * fluvial_const + diffusive_const*slope;
+	mxRet.initlike(runoff_distr);
+	DoubleChainCodeData initValue(0.0);
+	mxRet.fill(initValue);
+
+	MultiflowDMatrix::iterator iRunoff = runoff_distr.begin(), endRunoff = runoff_distr.end();
+	MultiflowDMatrix::iterator iSlope = mldd_slope.begin();
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
+	DblRasterMx::iterator iTerrain = terrain.begin();
+
+	double max_time_interval = DoubleUtil::getMAXValue();
+
+	for (; iRunoff != endRunoff; ++iRunoff, ++iSlope, ++iRet, ++iTerrain) {
+		double current_terrain_value = *iTerrain;
+		double velocity_sum = 0.0;
+		for (int i = 0; i < 8; ++i) {
+			double runoff = (*iRunoff)(i);
+			double slope = (*iSlope)(i);
+			double velocity = ::pow(runoff, runoff_exponent) * ::pow(slope, slope_exponent) * fluvial_const + diffusive_const*slope;
+			(*iRet)(i) = velocity;
+			velocity_sum+=velocity;
+		}
+
+		if (velocity_sum < 1e-10)
+			continue;
+
+		for (unsigned char cc = 1; cc < 10; ++cc) {
+			if (cc==5)
+				continue;
+			if (!iTerrain.isValidItemByChainCode(cc))
+				continue;
+			double neighbour_terrain_value = iTerrain.chain_code(cc);
+			if (current_terrain_value > neighbour_terrain_value + min_elevation_diff) {
+				double velocity = iRet->getByChainCode(cc);
+				double dt = (current_terrain_value - neighbour_terrain_value) / (velocity_sum + velocity);
+				if (dt < max_time_interval)
+					max_time_interval = dt;
+			}
+		}
+	}
+
+	return max_time_interval;
 }
 
-double compute_sediment_out(DblRasterMx & mxTerrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mlddd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double max_iter_time, MultiflowDMatrix & mxRet)
+void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt, MultiflowDMatrix & mxRet)
 {
-	double iter_time = max_iter_time;
+	mxRet.initlike(mxSedimentVelocityMLDD);
 
+	MultiflowDMatrix::iterator iSedimentVelocity = mxSedimentVelocityMLDD.begin(), endSedimentVelocity = mxSedimentVelocityMLDD.end();
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
 
-
-
-	return iter_time;
+	for (; iSedimentVelocity != endSedimentVelocity; ++iSedimentVelocity, ++iRet) {
+		for (int i = 0; i < 8; ++i) {
+			(*iRet)(i) = (*iSedimentVelocity)(i) * dt;
+		}
+	}
 }
+
 
 }

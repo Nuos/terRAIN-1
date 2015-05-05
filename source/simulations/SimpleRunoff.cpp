@@ -93,7 +93,7 @@ bool SimpleRunoff::run()
 
 		DblRasterMx mxInFlow;
 		DblRasterMx mxOutFlow;
-		compute_material_movement(mxFluid,mxOutflowFlux,mxInFlow, mxOutFlow);
+		compute_material_movement(mxOutflowFlux,mxInFlow, mxOutFlow);
 
 		mxFluid = mxFluid - mxOutFlow + mxInFlow;
 

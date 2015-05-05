@@ -55,8 +55,9 @@ bool CompositSimulation::run()
 	size_t nSizeY = 20;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
-	double accumulated_rain = 0.0; //[length_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
+
+	double accumulated_rain = 0.0; //[length_unit] do not change
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
 	DblRasterMx mxFlowDepth;
@@ -69,7 +70,6 @@ bool CompositSimulation::run()
 	DblRasterMx soil;
 
 	//initial terrain and ground 
-	
 	switch (groundProductionType)
 	{
 		case gpNone:

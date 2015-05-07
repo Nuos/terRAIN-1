@@ -49,12 +49,12 @@ bool CompositSimulation::run()
 	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
 	double rainTime = 10;
 	double max_iteration_time = 1;
-
-
+	
 	double runoff_exponent = 1.0;
 	double slope_exponent = 2;
 	double fluvial_const = 1.0;
 	double diffusive_const = 1.0;
+	double kTect = 1;
 
 	// common variables
 	size_t nSizeX = 20;
@@ -84,14 +84,13 @@ bool CompositSimulation::run()
 			// initial ground generation
 			double slope = 1.0;
 			double elevation = 100;
+			DblRasterMx randomNoise;
 
+			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
+			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
+			uniform(randomNoise);
+			rock = rock + randomNoise;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
-			for (size_t i = 0; i < nSizeX; i++){
-				for (size_t j = 0; j < nSizeY; j++){
-					rock(i,j)=elevation + (i+j)*slope;	
-				}
-			}
-			//rock(0,0) = 0;
 			break;
 		}
 		default:
@@ -216,7 +215,7 @@ bool CompositSimulation::run()
 			multiflowAngles(terrain, mxMLLDSlope, true);
 
 			MultiflowDMatrix mxSedimentVelocityMLDD;
-			double max_time_interval_of_sediment_flow = 0.95 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-3, mxSedimentVelocityMLDD);
+			double max_time_interval_of_sediment_flow = 0.8 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-3, mxSedimentVelocityMLDD);
 			switch (runoffProductionType)
 			{
 				case rfRainfallRunoff:
@@ -241,6 +240,21 @@ bool CompositSimulation::run()
 			rock = rock + mxSedIn - mxSedOut;
 
 			terrain = rock + soil;
+
+			DblRasterMx Edges;
+			mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
+			DblRasterMx kTectIteration;
+			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
+			Edges = Edges-kTectIteration;
+			     size_t j = 0;
+			   for ( j = 0; j < nSizeY; j++ ){
+                       terrain(j,nSizeX-1) = Edges(j,nSizeX-1);
+					   terrain(j,0) = Edges(j,0);					 
+               }
+			    for ( j = 1; j < nSizeX-1; j++ ){
+                       terrain(nSizeY-1,j) = Edges(nSizeY-1,j);
+					   terrain(0,j) = Edges(0,j);
+			   }
 			mxFlowDepth = copyOfFlowDepth;
 			accumulated_rain = copy_of_accumulated_rain;
 			elapsedRainTime = copy_of_elapsedRainTime;
@@ -252,7 +266,7 @@ bool CompositSimulation::run()
 		iteration_nr++;
 	}
 
-	printmx(rock);
+	printmx(terrain);
 
 	return true;
 }

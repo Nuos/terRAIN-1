@@ -995,7 +995,9 @@ bool compute_flux_distribution(MultiflowDMatrix & mxLDD, DblRasterMx & mxFlux, M
 void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPits)
 {
 	mxRet.initlike(mxOp);
-
+	DoubleChainCodeData initValue(0.0);
+	mxRet.fill(initValue);
+	MultiflowDMatrix::iterator iRet = mxRet.begin();
 	if (bFillPits){
 		DblRasterMx mx1;
 
@@ -1006,12 +1008,15 @@ void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPit
 		FillPITs obj(mxOp,mx1,1);
 #endif
 		obj.run();
-
-		MultiflowLDD Obj(1.0, mx1.begin(), mx1.end(), mxRet.begin(),bFillPits,false, true);
+		DblRasterMx::iterator iMx1 = mx1.begin(), endMx1 = mx1.end();
+		
+		MultiflowLDD Obj(1.0, iMx1 , endMx1 , iRet ,bFillPits,false, true);
 
 		_RUN(Obj)
 	}else{
-		MultiflowLDD Obj(1.0, mxOp.begin(), mxOp.end(), mxRet.begin(),bFillPits,false, true);
+		DblRasterMx::iterator iMx1 = mxOp.begin(), endMx1 = mxOp.end();
+
+		MultiflowLDD Obj(1.0, iMx1 ,endMx1, mxRet.begin(),bFillPits,false, true);
 
 		_RUN(Obj)
 	}
@@ -1286,5 +1291,35 @@ void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt,
 	}
 }
 
+void saveToArcgis(DblRasterMx & mx, size_t nIter, const char * lpszBaseName)
+{
+	std::string strBase(lpszBaseName);
+	std::string strArcgisFile;
+	
+	FileUtil::CreateFilePath(strBase,nIter,filetypeAscii,strArcgisFile);
+
+	std::ofstream ofs(strArcgisFile.c_str());
+	size_t ncols = mx.getColNr();
+	size_t nrows = mx.getColNr();
+	double pixelSize = mx.getPixelSize();
+	ofs << "ncols         " << ncols << std::endl;
+	ofs << "nrows         " << nrows << std::endl;
+	ofs << "xllcorner     " << 0.0 << std::endl;
+	ofs << "yllcorner     " << 0.0 << std::endl;
+	ofs << "cellsize          " << pixelSize << std::endl;
+	ofs << "NODATA_value  -9999" << std::endl;
+
+	DblRasterMx::iterator iMx = mx.begin(), endMx = mx.end();
+	DblRasterMx::iterator begin = mx.begin();
+	for (; iMx != endMx; ++iMx) {
+		double val = *iMx;
+		if (iMx != begin)
+			ofs << " ";
+		ofs << val;
+	}
+
+
+	//mx.writeToAsc(ofs,removeOutflowSides);
+}
 
 }

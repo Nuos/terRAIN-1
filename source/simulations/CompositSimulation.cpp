@@ -40,20 +40,20 @@ enum RunoffProductionType
 
 bool CompositSimulation::run()
 {
-	
+	setOutputDirectory("d:\\terrain_output");
 	// simulation settings
 	setOutflowType(ofAllSides);
 	SoilProductionType groundProductionType = gpNone;
 	
 	//rfCatchmentBasedEstimation rfRainfallRunoff
 	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
-	double rainTime = 10;
+	double rainTime = 100;
 	double max_iteration_time = 1;
 	
 	double runoff_exponent = 1.0;
 	double slope_exponent = 2;
-	double fluvial_const = 1.0;
-	double diffusive_const = 1.0;
+	double fluvial_const = 0.01;
+	double diffusive_const = 0.01;
 	double kTect = 1;
 
 	// common variables
@@ -75,6 +75,9 @@ bool CompositSimulation::run()
 	// graound layer above the rock based terrain layer 
 	DblRasterMx soil;
 
+	DblRasterMx Edges;
+	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
+
 	//initial terrain and ground 
 	switch (groundProductionType)
 	{
@@ -84,8 +87,8 @@ bool CompositSimulation::run()
 			// initial ground generation
 			double slope = 1.0;
 			double elevation = 100;
+			
 			DblRasterMx randomNoise;
-
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
 			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
 			uniform(randomNoise);
@@ -99,6 +102,7 @@ bool CompositSimulation::run()
 	}
 	DblRasterMx terrain;
     terrain = rock + soil;
+	printmx(terrain);
 
 	DblRasterMx outflowPITs;
 	findOutflowPITs(terrain, outflowPITs); 
@@ -196,16 +200,10 @@ bool CompositSimulation::run()
 					DblRasterMx mxAccflux;
 					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
 					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);
-
+					
 					if ( elapsedTime >= rainTime) {
 						stopCondition = false;
 					}
-
-					/*if ((iteration_nr % 10) ==0) {
-						printmx(runoff_distribution);
-						printmx(mxAccflux);
-
-					}*/
 				}
 				break;
 			}
@@ -213,7 +211,6 @@ bool CompositSimulation::run()
 
 			MultiflowDMatrix  mxMLLDSlope;
 			multiflowAngles(terrain, mxMLLDSlope, true);
-
 			MultiflowDMatrix mxSedimentVelocityMLDD;
 			double max_time_interval_of_sediment_flow = 0.8 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-3, mxSedimentVelocityMLDD);
 			switch (runoffProductionType)
@@ -241,19 +238,18 @@ bool CompositSimulation::run()
 
 			terrain = rock + soil;
 
-			DblRasterMx Edges;
-			mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
+			
 			DblRasterMx kTectIteration;
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
 			Edges = Edges-kTectIteration;
 			     size_t j = 0;
 			   for ( j = 0; j < nSizeY; j++ ){
-                       terrain(j,nSizeX-1) = Edges(j,nSizeX-1);
-					   terrain(j,0) = Edges(j,0);					 
+                       rock(j,nSizeX-1) = Edges(j,nSizeX-1);
+					   rock(j,0) = Edges(j,0);					 
                }
 			    for ( j = 1; j < nSizeX-1; j++ ){
-                       terrain(nSizeY-1,j) = Edges(nSizeY-1,j);
-					   terrain(0,j) = Edges(0,j);
+                       rock(nSizeY-1,j) = Edges(nSizeY-1,j);
+					   rock(0,j) = Edges(0,j);
 			   }
 			mxFlowDepth = copyOfFlowDepth;
 			accumulated_rain = copy_of_accumulated_rain;
@@ -267,6 +263,7 @@ bool CompositSimulation::run()
 	}
 
 	printmx(terrain);
+	saveToArcgis(terrain, iteration_nr, "terrain");
 
 	return true;
 }

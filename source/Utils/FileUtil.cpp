@@ -7,8 +7,21 @@ void FileUtil::CreateFilePath(std::string & strBaseName, size_t nIter, eFileType
 
 	char lpszTmp[256];
 
+	std::string extension;
+	switch (fileType)
+	{
+	case filetypeCol:
+		extension = "col";
+		break;
+	case filetypeAscii:
+		extension = "asc";
+		break;
+	case filetypeArcGis:
+		extension = "asc";
+		break;
+	}
 	sprintf(lpszTmp,"%s\\%s%06u.%s",params.getOutputDir().c_str(), strBaseName.c_str(),nIter,
-		fileType==filetypeCol ? "col" : "asc");
+		extension.c_str());
 
 	strFilePath = lpszTmp;
 } 

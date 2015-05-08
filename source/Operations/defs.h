@@ -49,7 +49,8 @@ enum eCoordType
 enum eFileType
 {
 	filetypeCol = 0,
-	filetypeAscii
+	filetypeAscii,
+	filetypeArcGis,
 
 };
 #endif

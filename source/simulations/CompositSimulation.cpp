@@ -47,18 +47,18 @@ bool CompositSimulation::run()
 	
 	//rfCatchmentBasedEstimation rfRainfallRunoff
 	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
-	double rainTime = 100;
+	double rainTime = 10;
 	double max_iteration_time = 1;
 	
-	double runoff_exponent = 1.0;
-	double slope_exponent = 2;
+	double runoff_exponent = 1.5;
+	double slope_exponent = 1.5;
 	double fluvial_const = 0.01;
 	double diffusive_const = 0.01;
 	double kTect = 1;
 
 	// common variables
-	size_t nSizeX = 20;
-	size_t nSizeY = 20;
+	size_t nSizeX = 50;
+	size_t nSizeY = 50;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
@@ -263,6 +263,7 @@ bool CompositSimulation::run()
 	}
 
 	printmx(terrain);
+	
 	saveToArcgis(terrain, iteration_nr, "terrain");
 
 	return true;

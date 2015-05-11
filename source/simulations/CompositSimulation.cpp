@@ -42,28 +42,31 @@ bool CompositSimulation::run()
 {
 	setOutputDirectory("d:\\terrain_output");
 	// simulation settings
-	setOutflowType(ofAllSides);
+	// setOutflowType(ofAllSides);
+	setOutflowType(ofTopAndBottomSide);
+	//setOutflowType(ofLeftAndRightSide);
+	
 	SoilProductionType groundProductionType = gpNone;
 	
 	//rfCatchmentBasedEstimation rfRainfallRunoff
 	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
-	double rainTime = 10;
+	double rainTime = 100;
 	double max_iteration_time = 1;
 	
 	double runoff_exponent = 1.5;
 	double slope_exponent = 1.5;
-	double fluvial_const = 0.01;
-	double diffusive_const = 0.01;
-	double kTect = 1;
+	double fluvial_const = 0.0001;
+	double diffusive_const = 0.0001;
+	double kTect = 0.1;
 
 	// common variables
-	size_t nSizeX = 50;
-	size_t nSizeY = 50;
+	size_t nSizeX = 20;
+	size_t nSizeY = 20;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
-
 	double accumulated_rain = 0.0; //[length_unit] do not change
+	
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
 	DblRasterMx mxFlowDepth;
@@ -89,10 +92,12 @@ bool CompositSimulation::run()
 			double elevation = 100;
 			
 			DblRasterMx randomNoise;
+			DblRasterMx multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
+			mapattr(nSizeY,nSizeX,pixelSize,0.000001, multiplicatorSmall);
 			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
 			uniform(randomNoise);
-			rock = rock + randomNoise;
+			rock = rock + randomNoise * multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
 			break;
 		}
@@ -243,14 +248,21 @@ bool CompositSimulation::run()
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
 			Edges = Edges-kTectIteration;
 			     size_t j = 0;
-			   for ( j = 0; j < nSizeY; j++ ){
+				 size_t l = 0;
+			   for ( j = 0; j < nSizeY; j++ ){				 
                        rock(j,nSizeX-1) = Edges(j,nSizeX-1);
-					   rock(j,0) = Edges(j,0);					 
-               }
-			    for ( j = 1; j < nSizeX-1; j++ ){
+					   /*for ( l = 0; l < nSizeY; l++ ){
+						   if (l < 3){
+							   rock(j,l) = rock(j,l) - kTectIteration(j,l);
+						   }
+					   }*/
+			   }
+							               
+			 /*   for ( j = 1; j < nSizeX-1; j++ ){
                        rock(nSizeY-1,j) = Edges(nSizeY-1,j);
 					   rock(0,j) = Edges(0,j);
-			   }
+			   }*/
+
 			mxFlowDepth = copyOfFlowDepth;
 			accumulated_rain = copy_of_accumulated_rain;
 			elapsedRainTime = copy_of_elapsedRainTime;
@@ -259,6 +271,9 @@ bool CompositSimulation::run()
 
 		elapsedTime+=iteration_time;
 		std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
+		/*if (( iteration_nr % 1000 )==0){
+					saveToArcgis(terrain, iteration_nr, "terrain");
+		}*/
 		iteration_nr++;
 	}
 

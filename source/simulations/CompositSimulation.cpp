@@ -42,15 +42,15 @@ bool CompositSimulation::run()
 {
 	setOutputDirectory("d:\\terrain_output");
 	// simulation settings
-	// setOutflowType(ofAllSides);
-	setOutflowType(ofTopAndBottomSide);
+	setOutflowType(ofAllSides);
+	//setOutflowType(ofTopAndBottomSide);
 	//setOutflowType(ofLeftAndRightSide);
 	
 	SoilProductionType groundProductionType = gpNone;
 	
 	//rfCatchmentBasedEstimation rfRainfallRunoff
 	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
-	double rainTime = 100;
+	double rainTime = 20;
 	double max_iteration_time = 1;
 	
 	double runoff_exponent = 1.5;
@@ -60,8 +60,8 @@ bool CompositSimulation::run()
 	double kTect = 0.1;
 
 	// common variables
-	size_t nSizeX = 20;
-	size_t nSizeY = 20;
+	size_t nSizeX = 50;
+	size_t nSizeY = 50;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
@@ -94,7 +94,7 @@ bool CompositSimulation::run()
 			DblRasterMx randomNoise;
 			DblRasterMx multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
-			mapattr(nSizeY,nSizeX,pixelSize,0.000001, multiplicatorSmall);
+			mapattr(nSizeY,nSizeX,pixelSize,0.001, multiplicatorSmall);
 			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
 			uniform(randomNoise);
 			rock = rock + randomNoise * multiplicatorSmall;
@@ -124,6 +124,9 @@ bool CompositSimulation::run()
 
 	size_t iteration_nr = 0;
 	double waterOnPits = 0.0;
+	double logTimeInc = 1.0;
+	double nextLogTime = logTimeInc;
+	int log_index = 1;
 	while (stopCondition) 
 	{
 		bool redo_iteration = true;
@@ -215,9 +218,10 @@ bool CompositSimulation::run()
 
 
 			MultiflowDMatrix  mxMLLDSlope;
-			multiflowAngles(terrain, mxMLLDSlope, true);
+			multiflowAngles(terrain, mxMLLDSlope, false);
 			MultiflowDMatrix mxSedimentVelocityMLDD;
-			double max_time_interval_of_sediment_flow = 0.8 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-3, mxSedimentVelocityMLDD);
+			double max_time_interval_of_sediment_flow = 0.8 * compute_sediment_velocity_mldd(terrain, runoff_distribution, mxMLLDSlope, runoff_exponent, slope_exponent, fluvial_const, diffusive_const, 1e-7, mxSedimentVelocityMLDD);
+			max_time_interval_of_sediment_flow = ::min(max_time_interval_of_sediment_flow, max_iteration_time);
 			switch (runoffProductionType)
 			{
 				case rfRainfallRunoff:
@@ -240,17 +244,27 @@ bool CompositSimulation::run()
 			compute_material_movement(mxSedimentMovement,mxSedIn, mxSedOut);
 
 			rock = rock + mxSedIn - mxSedOut;
+			
+			/* check mass conversation
 
+			double avg_of_SedIn = mapavarage(mxSedIn);
+			double avg_of_SedOut = mapavarage(mxSedIn);
+			if (fabs(avg_of_SedIn-avg_of_SedOut) > 10-6) {
+				std::cout << "mass conversation violated" << std::endl;
+				stopCondition = false;
+			}
+			*/
 			terrain = rock + soil;
 
 			
 			DblRasterMx kTectIteration;
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
 			Edges = Edges-kTectIteration;
-			     size_t j = 0;
-				 size_t l = 0;
+			    size_t j = 0;
+				size_t l = 0;
 			   for ( j = 0; j < nSizeY; j++ ){				 
-                       rock(j,nSizeX-1) = Edges(j,nSizeX-1);
+                   rock(j,0) = Edges(j,0);   
+				   rock(j,nSizeX-1) = Edges(j,nSizeX-1);
 					   /*for ( l = 0; l < nSizeY; l++ ){
 						   if (l < 3){
 							   rock(j,l) = rock(j,l) - kTectIteration(j,l);
@@ -258,10 +272,10 @@ bool CompositSimulation::run()
 					   }*/
 			   }
 							               
-			 /*   for ( j = 1; j < nSizeX-1; j++ ){
+			    for ( j = 1; j < nSizeX-1; j++ ){
                        rock(nSizeY-1,j) = Edges(nSizeY-1,j);
 					   rock(0,j) = Edges(0,j);
-			   }*/
+			   }
 
 			mxFlowDepth = copyOfFlowDepth;
 			accumulated_rain = copy_of_accumulated_rain;
@@ -271,9 +285,11 @@ bool CompositSimulation::run()
 
 		elapsedTime+=iteration_time;
 		std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
-		/*if (( iteration_nr % 1000 )==0){
-					saveToArcgis(terrain, iteration_nr, "terrain");
-		}*/
+		if (elapsedTime > nextLogTime){
+					saveToArcgis(terrain, log_index, "terrain");
+					nextLogTime+=logTimeInc;
+					++log_index;
+		}
 		iteration_nr++;
 	}
 

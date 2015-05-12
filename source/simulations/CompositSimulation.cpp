@@ -48,9 +48,9 @@ bool CompositSimulation::run()
 	
 	SoilProductionType groundProductionType = gpNone;
 	
-	//rfCatchmentBasedEstimation rfRainfallRunoff
-	RunoffProductionType runoffProductionType = rfCatchmentBasedEstimation;
-	double rainTime = 20;
+	//rfCatchmentBasedEstimation randomNoise
+	RunoffProductionType runoffProductionType = rfRainfallRunoff;
+	double rainTime = 1000;
 	double max_iteration_time = 1;
 	
 	double runoff_exponent = 1.5;
@@ -99,6 +99,15 @@ bool CompositSimulation::run()
 			uniform(randomNoise);
 			rock = rock + randomNoise * multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
+			saveToArcgis(randomNoise, 0, "randomNoise");
+			/*
+			if (!loadFromArcgis("d:\\terrain_output\\terrain000010.asc",rock)) {
+				std::cout << "Unable to read arc gis file" << std::endl;
+				return false;
+			}*/
+			/*IntRasterMx terrain_pixel_types;
+			find_special_points(rock, ditch, terrain_pixel_types);
+			saveToArcgis(terrain_pixel_types, 0, "special_points");*/
 			break;
 		}
 		default:
@@ -124,7 +133,7 @@ bool CompositSimulation::run()
 
 	size_t iteration_nr = 0;
 	double waterOnPits = 0.0;
-	double logTimeInc = 1.0;
+	double logTimeInc = 10.0;
 	double nextLogTime = logTimeInc;
 	int log_index = 1;
 	while (stopCondition) 
@@ -204,7 +213,7 @@ bool CompositSimulation::run()
 				{
 					// mldd of water surface
 					MultiflowDMatrix  terrainMLDD;
-					multiflowLDD( 1.0, terrain, terrainMLDD, true);
+					multiflowLDD( 1.0, terrain, terrainMLDD, false);
 					DblRasterMx mxAccflux;
 					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
 					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);

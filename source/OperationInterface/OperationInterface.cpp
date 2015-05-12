@@ -1135,10 +1135,12 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 
 	DblRasterMx::iterator imx = mx.begin(), endmx = mx.end();
 	IntRasterMx::iterator iRet = ret.begin();
-
+	int cnt = 0;
 	for( ; imx != endmx; ++imx, ++iRet) {
-		int nr_of_local_mins = 0;
-		int nr_of_local_maxs = 0;
+		int nr_of_lower_local_mins = 0;
+		int nr_of_higher_local_mins = 0;
+		int nr_of_lower_local_maxs = 0;
+		int nr_of_higher_local_maxs = 0;
 		bool isPeak = true;
 		double current_val = *imx;
 		for (unsigned char cc = 1; cc < 10; ++cc) {
@@ -1157,18 +1159,26 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 					double cc_prev_val = imx.chain_code(cc_prev);
 					double cc_next_val = imx.chain_code(cc_next);
 
-					if (cc_prev_val < cc_val && cc_next_val < cc_val )
-						++nr_of_local_maxs;
+					if (cc_prev_val < cc_val && cc_next_val < cc_val ) {
+						if (cc_val > current_val)
+							++nr_of_higher_local_maxs;
+						else
+							++nr_of_lower_local_maxs;
+					}
 
-					if (cc_prev_val > cc_val && cc_next_val > cc_val )
-						++nr_of_local_mins;
+					if (cc_prev_val > cc_val && cc_next_val > cc_val ) {
+						if (cc_val > current_val)
+							++nr_of_higher_local_mins;
+						else
+							++nr_of_lower_local_mins;
+					}
 
 				}
 			}
 		}
 
 		int pixel_type = 0;
-
+		/*
 		if ((spec_points & ridge) && nr_of_local_mins > 1 && nr_of_local_maxs > 0)
 			pixel_type |= ridge;
 
@@ -1177,9 +1187,11 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 
 		if ((spec_points & col) && nr_of_local_mins > 1 && nr_of_local_maxs == 2)
 			pixel_type |= peak;
-
-		if ((spec_points & ditch) && nr_of_local_mins > 0 && nr_of_local_maxs > 1)
+	    */
+		if ((spec_points & ditch) && nr_of_higher_local_mins > 0 && nr_of_lower_local_mins > 0 && nr_of_higher_local_maxs > 1) {
 			pixel_type |= ditch;	
+			cnt++;
+		}
 
 		*iRet = pixel_type;
 	}
@@ -1292,33 +1304,6 @@ void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt,
 	}
 }
 
-void saveToArcgis(DblRasterMx & mx, size_t nIter, const char * lpszBaseName)
-{
-	std::string strBase(lpszBaseName);
-	std::string strArcgisFile;
-	
-	FileUtil::CreateFilePath(strBase,nIter,filetypeAscii,strArcgisFile);
-
-	std::ofstream ofs(strArcgisFile.c_str());
-	size_t ncols = mx.getColNr();
-	size_t nrows = mx.getColNr();
-	double pixelSize = mx.getPixelSize();
-	ofs << "ncols         " << ncols << std::endl;
-	ofs << "nrows         " << nrows << std::endl;
-	ofs << "xllcorner     " << 0.0 << std::endl;
-	ofs << "yllcorner     " << 0.0 << std::endl;
-	ofs << "cellsize          " << pixelSize << std::endl;
-	ofs << "NODATA_value  -9999" << std::endl;
-
-	DblRasterMx::iterator iMx = mx.begin(), endMx = mx.end();
-	DblRasterMx::iterator begin = mx.begin();
-	for (; iMx != endMx; ++iMx) {
-		double val = *iMx;
-		if (iMx != begin)
-			ofs << " ";
-		ofs << val;
-	}
-}
 
 bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx)
 {

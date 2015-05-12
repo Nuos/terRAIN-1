@@ -180,7 +180,35 @@ enum SpecialPoint
 
 void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret);
 
-void saveToArcgis(DblRasterMx & mx, size_t nIter, const char * lpszBaseName);
+template<class T> 
+void saveToArcgis(rastermatrix<T> & mx, size_t nIter, const char * lpszBaseName)
+{
+	std::string strBase(lpszBaseName);
+	std::string strArcgisFile;
+	
+	FileUtil::CreateFilePath(strBase,nIter,filetypeAscii,strArcgisFile);
+
+	std::ofstream ofs(strArcgisFile.c_str());
+	size_t ncols = mx.getColNr();
+	size_t nrows = mx.getColNr();
+	double pixelSize = mx.getPixelSize();
+	ofs << "ncols         " << ncols << std::endl;
+	ofs << "nrows         " << nrows << std::endl;
+	ofs << "xllcorner     " << 0.0 << std::endl;
+	ofs << "yllcorner     " << 0.0 << std::endl;
+	ofs << "cellsize          " << pixelSize << std::endl;
+	ofs << "NODATA_value  -9999" << std::endl;
+
+	rastermatrix<T>::iterator iMx = mx.begin(), endMx = mx.end();
+	rastermatrix<T>::iterator begin = mx.begin();
+	for (; iMx != endMx; ++iMx) {
+		double val = *iMx;
+		if (iMx != begin)
+			ofs << " ";
+		ofs << val;
+	}
+}
+
 bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx);
 }
 

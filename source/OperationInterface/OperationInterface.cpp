@@ -28,6 +28,7 @@ using namespace VISUALIZATION;
 #include "MLDDFunctions.h"
 #include "SpreadLDD.h"
 #include "SpreadLDDMax.h"
+#include <map>
 
 
 namespace TR
@@ -1317,9 +1318,55 @@ void saveToArcgis(DblRasterMx & mx, size_t nIter, const char * lpszBaseName)
 			ofs << " ";
 		ofs << val;
 	}
+}
 
+bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx)
+{
+	std::ifstream isf(lpszFileName);
 
-	//mx.writeToAsc(ofs,removeOutflowSides);
+	if (!isf.is_open())
+	{
+		return false;
+	}
+
+	std::map<std::string, double> attributeMap;
+
+	for (int i = 0; i < 6; ++i) {
+		std::string name;
+		double val;
+		isf >> name;
+		isf >> val;
+
+		if (name.empty())
+			continue;
+
+		attributeMap[name] = val;
+	}
+
+	size_t rows = static_cast<size_t>(attributeMap["nrows"]);
+	size_t cols = static_cast<size_t>(attributeMap["ncols"]);
+	double pixelSize = attributeMap["cellsize"];
+
+	if (rows==0 || cols==0 || pixelSize <= 0.0)
+		return false;
+
+	double initVal = 0.0;
+	mx.init(rows, cols, pixelSize, origoBottomLeft, initVal);
+	size_t pixel_nr = rows * cols;
+
+	DblRasterMx::iterator iter = mx.begin(), end = mx.end();
+
+	size_t cnt = 0;
+	for (; iter != end && !isf.eof(); ++iter, ++cnt) {
+		double val;
+		isf >> val;
+		*iter = val;
+	}
+
+	if (cnt != pixel_nr)
+		return false;
+
+	return true;
 }
 
 }

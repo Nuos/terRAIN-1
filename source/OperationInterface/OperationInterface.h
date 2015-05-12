@@ -181,6 +181,7 @@ enum SpecialPoint
 void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret);
 
 void saveToArcgis(DblRasterMx & mx, size_t nIter, const char * lpszBaseName);
+bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx);
 }
 
 #endif

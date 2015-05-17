@@ -1128,21 +1128,31 @@ void compute_material_movement(MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & m
 	}
 }
 
-void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret)
+double get_dx(unsigned char cc, double pixelSize)
 {
-	ret.initlike(mx);
-	ret.fill(notSpecPoint);
+	if (cc==1 || cc==3 || cc==7 || cc==9)
+		return pixelSize*SQRT2;
+	else 
+		return pixelSize;
+}
 
-	DblRasterMx::iterator imx = mx.begin(), endmx = mx.end();
+void find_special_points(DblRasterMx & terrain, unsigned int spec_points, IntRasterMx & ret)
+{
+	ret.initlike(terrain);
+	ret.fill(notSpecPoint);
+	double pixelSize = terrain.getPixelSize();
+	DblRasterMx::iterator imx = terrain.begin(), endmx = terrain.end();
 	IntRasterMx::iterator iRet = ret.begin();
 	int cnt = 0;
-	for( ; imx != endmx; ++imx, ++iRet) {
+	for( ; imx != endmx; ++iRet, ++imx) {
 		int nr_of_lower_local_mins = 0;
 		int nr_of_higher_local_mins = 0;
 		int nr_of_lower_local_maxs = 0;
 		int nr_of_higher_local_maxs = 0;
 		bool isPeak = true;
-		double current_val = *imx;
+		double current_elevation = *imx;
+
+		//DoubleChainCodeData & slope
 		for (unsigned char cc = 1; cc < 10; ++cc) {
 			if (cc==5)
 				continue;
@@ -1151,23 +1161,29 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 			unsigned char cc_prev = cc==1 ? 9 : cc - 1;
 
 			if (imx.isValidItemByChainCode(cc)) {
-				double cc_val = imx.chain_code(cc);
-				if (cc_val >= current_val) 
+				// cc_val is the tangent of slope in direction of cc
+				double cc_elevation = imx.chain_code(cc);
+				double cc_val = (cc_elevation - current_elevation)/get_dx(cc,pixelSize);
+				if (cc_elevation >= current_elevation) 
 					isPeak = false;
 
 				if (imx.isValidItemByChainCode(cc_next) && imx.isValidItemByChainCode(cc_prev)) {
-					double cc_prev_val = imx.chain_code(cc_prev);
-					double cc_next_val = imx.chain_code(cc_next);
+					// cc_prev_val is the tangent of slope in direction of cc_prev
+					double cc_prev_elevation = imx.chain_code(cc_prev); 
+					double cc_prev_val = (cc_prev_elevation - current_elevation)/get_dx(cc_prev,pixelSize);
+					// cc_next_val is the tangent of slope in direction of cc_next
+					double cc_next_elevation = imx.chain_code(cc_next); 
+					double cc_next_val = (cc_next_elevation - current_elevation)/get_dx(cc_next,pixelSize);
 
 					if (cc_prev_val < cc_val && cc_next_val < cc_val ) {
-						if (cc_val > current_val)
+						if (cc_elevation > current_elevation)
 							++nr_of_higher_local_maxs;
 						else
 							++nr_of_lower_local_maxs;
 					}
 
 					if (cc_prev_val > cc_val && cc_next_val > cc_val ) {
-						if (cc_val > current_val)
+						if (cc_elevation > current_elevation)
 							++nr_of_higher_local_mins;
 						else
 							++nr_of_lower_local_mins;
@@ -1178,20 +1194,22 @@ void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx
 		}
 
 		int pixel_type = 0;
-		/*
-		if ((spec_points & ridge) && nr_of_local_mins > 1 && nr_of_local_maxs > 0)
+		
+		if ((spec_points & ridge) && nr_of_lower_local_mins > 1 && nr_of_higher_local_maxs > 0)
 			pixel_type |= ridge;
-
+		/*
 		if ((spec_points & peak) && isPeak)
 			pixel_type |= peak;
 
 		if ((spec_points & col) && nr_of_local_mins > 1 && nr_of_local_maxs == 2)
 			pixel_type |= peak;
 	    */
-		if ((spec_points & ditch) && nr_of_higher_local_mins > 0 && nr_of_lower_local_mins > 0 && nr_of_higher_local_maxs > 1) {
-			pixel_type |= ditch;	
-			cnt++;
+		if ((spec_points & channel) && nr_of_higher_local_mins > 0 && nr_of_lower_local_mins > 0 && nr_of_higher_local_maxs > 1) {
+			pixel_type |= channel;	
 		}
+
+		if ((spec_points & slope_point) && nr_of_lower_local_mins == 1 && nr_of_higher_local_maxs ==1 )
+			pixel_type |= slope_point;
 
 		*iRet = pixel_type;
 	}
@@ -1244,32 +1262,58 @@ void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & f
 	}
 }
 
+erosion_rate_params::erosion_rate_params() :
+	runoff_exponent(1.0),
+	slope_exponent(1.0), 
+	fluvial_const(1.0),
+	diffusive_const(1.0), 
+	min_elevation_diff(1e-7),
+	critical_slope(1.0),
+	diffusion_exponent(2.0),
+	infinite_erosion_rate(1e6),
+	simple_diffusion(true)
+{}
 
-double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double min_elevation_diff, MultiflowDMatrix & mxRet)
+
+double compute_erosion_rate(const erosion_rate_params & params, DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, erosion_rate_results & res)
 {
-	mxRet.initlike(runoff_distr);
 	DoubleChainCodeData initValue(0.0);
-	mxRet.fill(initValue);
+	res.mxDiffusiveErosionRate.initlike(runoff_distr);
+	res.mxDiffusiveErosionRate.fill(initValue);
+	res.mxFluvialErosionRate.initlike(runoff_distr);
+	res.mxFluvialErosionRate.fill(initValue);
 
 	MultiflowDMatrix::iterator iRunoff = runoff_distr.begin(), endRunoff = runoff_distr.end();
 	MultiflowDMatrix::iterator iSlope = mldd_slope.begin();
-	MultiflowDMatrix::iterator iRet = mxRet.begin();
+	MultiflowDMatrix::iterator iDiffusive = res.mxDiffusiveErosionRate.begin();
+	MultiflowDMatrix::iterator iFluvial = res.mxFluvialErosionRate.begin();
 	DblRasterMx::iterator iTerrain = terrain.begin();
 
 	double max_time_interval = DoubleUtil::getMAXValue();
 
-	for (; iRunoff != endRunoff; ++iRunoff, ++iSlope, ++iRet, ++iTerrain) {
+	double slope_threshold = params.critical_slope * 0.95;
+	for (; iRunoff != endRunoff; ++iRunoff, ++iSlope, ++iDiffusive,++iFluvial, ++iTerrain) {
 		double current_terrain_value = *iTerrain;
-		double velocity_sum = 0.0;
+		double erosion_rate_sum = 0.0;
 		for (int i = 0; i < 8; ++i) {
 			double runoff = (*iRunoff)(i);
 			double slope = (*iSlope)(i);
-			double velocity = ::pow(runoff, runoff_exponent) * ::pow(slope, slope_exponent) * fluvial_const + diffusive_const*slope;
-			(*iRet)(i) = velocity;
-			velocity_sum+=velocity;
+			double fluvial_erosion_rate = ::pow(runoff, params.runoff_exponent) * ::pow(slope, params.slope_exponent) * params.fluvial_const;
+			double diffusive_erosion_rate = 0.0;
+			if (slope >= slope_threshold) {
+				slope = slope_threshold;		
+			}
+			diffusive_erosion_rate = params.diffusive_const*slope;
+			if (!params.simple_diffusion) {
+				diffusive_erosion_rate/=(1.0 - pow(slope/params.critical_slope, params.diffusion_exponent));
+			}
+			double erosion_rate = fluvial_erosion_rate + diffusive_erosion_rate; 
+			(*iFluvial)(i) = fluvial_erosion_rate;
+			(*iDiffusive)(i) = diffusive_erosion_rate;
+			erosion_rate_sum+=erosion_rate;
 		}
 
-		if (velocity_sum < 1e-10)
+		if (erosion_rate_sum < 1e-10)
 			continue;
 
 		for (unsigned char cc = 1; cc < 10; ++cc) {
@@ -1278,9 +1322,9 @@ double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & 
 			if (!iTerrain.isValidItemByChainCode(cc))
 				continue;
 			double neighbour_terrain_value = iTerrain.chain_code(cc);
-			if (current_terrain_value > neighbour_terrain_value + min_elevation_diff) {
-				double velocity = iRet->getByChainCode(cc);
-				double dt = (current_terrain_value - neighbour_terrain_value) / (velocity_sum + velocity);
+			if (current_terrain_value > neighbour_terrain_value + params.min_elevation_diff) {
+				double erosion_rate = iFluvial->getByChainCode(cc) + iDiffusive->getByChainCode(cc);
+				double dt = (current_terrain_value - neighbour_terrain_value) / (erosion_rate_sum + erosion_rate);
 				if (dt < max_time_interval)
 					max_time_interval = dt;
 			}
@@ -1289,6 +1333,7 @@ double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & 
 
 	return max_time_interval;
 }
+
 
 void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt, MultiflowDMatrix & mxRet)
 {
@@ -1303,7 +1348,6 @@ void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt,
 		}
 	}
 }
-
 
 bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx)
 {

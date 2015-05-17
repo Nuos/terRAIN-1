@@ -102,7 +102,30 @@ void spreadLDDMax( MultiflowDMatrix & mxLDD, DblRasterMx & mxPoints, DblRasterMx
 void findOutflowPITs(DblRasterMx & mx,DblRasterMx & ret);
 void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & flowDepth, MultiflowDMatrix & mxRet);
 
-double compute_sediment_velocity_mldd(DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, double runoff_exponent, double slope_exponent, double fluvial_const, double diffusive_const, double min_elevation_diff, MultiflowDMatrix & mxRet);
+
+struct erosion_rate_params
+{
+	double runoff_exponent;
+	double slope_exponent; 
+	double fluvial_const;
+	double diffusive_const; 
+	double min_elevation_diff;
+	double critical_slope;
+	double diffusion_exponent;
+	double infinite_erosion_rate;
+	bool simple_diffusion;
+
+	erosion_rate_params();
+};
+
+struct erosion_rate_results
+{
+	MultiflowDMatrix mxDiffusiveErosionRate;
+	MultiflowDMatrix mxFluvialErosionRate;
+};
+
+
+double compute_erosion_rate(const erosion_rate_params & params, DblRasterMx & terrain, MultiflowDMatrix & runoff_distr, MultiflowDMatrix & mldd_slope, erosion_rate_results & res);
 void compute_sediment_flux(MultiflowDMatrix & mxSedimentVelocityMLDD, double dt, MultiflowDMatrix & mxRet);
 
 
@@ -175,10 +198,11 @@ enum SpecialPoint
 	ridge = 1,
 	peak = 1 << 1,
 	col = 1 << 2, //nyereg
-	ditch = 1 << 3 // bevágódás, metszõdés
+	channel = 1 << 3, // bevágódás, metszõdés
+	slope_point = 1 << 4,
 };
 
-void find_special_points(DblRasterMx & mx, unsigned int spec_points, IntRasterMx & ret);
+void find_special_points(DblRasterMx & terrain, unsigned int spec_points, IntRasterMx & ret);
 
 template<class T> 
 void saveToArcgis(rastermatrix<T> & mx, size_t nIter, const char * lpszBaseName)

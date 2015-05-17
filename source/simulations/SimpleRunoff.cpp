@@ -44,7 +44,7 @@ bool SimpleRunoff::run()
 	}
 
 	IntRasterMx terrain_pixel_types;
-	find_special_points(terrain, ridge | peak | col | ditch, terrain_pixel_types);
+	find_special_points(terrain, ridge | peak | col | channel, terrain_pixel_types);
 	MultiflowDMatrix  mxMLDD;
 	multiflowLDD( 1.0, terrain, mxMLDD, true);
 

@@ -59,15 +59,15 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stTotalRemoval;
 
-	double rainTime = 100;
+	double rainTime = 1.01;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.00000;
+	double min_iteration_time = 0.001;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
 	erosionRateParams.infinite_erosion_rate = 1;
 	erosionRateParams.diffusion_exponent = 2.0;
-	erosionRateParams.diffusive_const =  0.0;
+	erosionRateParams.diffusive_const =  0.0001;
 	erosionRateParams.fluvial_const = 0.001;
 	erosionRateParams.min_elevation_diff = 1e-7;
 	erosionRateParams.runoff_exponent = 1.5;
@@ -77,12 +77,48 @@ bool CompositSimulation::run()
 	double kTect = 0.1;
 
 	// common variables
-	size_t nSizeX = 20;
-	size_t nSizeY = 20;
+	size_t nSizeX = 30;
+	size_t nSizeY = 30;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
 	double accumulated_rain = 0.0; //[length_unit] do not change
+	
+	DblRasterMx mx1;
+	DblRasterMx mxSlope;
+	DblRasterMx mxSlopeCorrected;
+	DblRasterMx zeroPlusABit;
+	DblRasterMx five;
+	DblRasterMx mxAccflux;
+	DblRasterMx mxLongest;
+	DblRasterMx logMxLongest;
+	DblRasterMx logMxAccflux;
+	DblRasterMx elongation;
+	DblRasterMx upstreamMxDiagonal;
+	DblRasterMx mxUpstreamMax;
+	DblRasterMx dAdL;
+	DblRasterMx mxDiagonal;
+
+	MultiflowDMatrix mxSMLDD;
+	MultiflowDMatrix terrainMLDD;
+
+	RasterPositionMatrix upstreamMaxAreaPosition;
+
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mx1);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxSlope);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxSlopeCorrected);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0001, zeroPlusABit);
+	mapattr(nSizeY,nSizeX,pixelSize,5.0, five);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxAccflux);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxLongest);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, logMxAccflux);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, logMxLongest);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, elongation);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxUpstreamMax);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, upstreamMxDiagonal);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, dAdL);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxDiagonal);
+	
 	
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
@@ -96,7 +132,7 @@ bool CompositSimulation::run()
 	DblRasterMx soil;
 
 	DblRasterMx Edges;
-	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
+	mapattr(nSizeY,nSizeX,pixelSize,66, Edges);
 
 	//initial terrain and ground 
 	switch (groundProductionType)
@@ -105,7 +141,7 @@ bool CompositSimulation::run()
 		{
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, rock);
 			// initial ground generation
-			double slope = 1.0;
+			
 			double elevation = 100;
 			
 			DblRasterMx randomNoise;
@@ -118,13 +154,13 @@ bool CompositSimulation::run()
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
 			saveToArcgis(randomNoise, 0, "randomNoise");
 			
-			/*if (!loadFromArcgis("d:\\terrain_output\\save\\terrain000010_nr1.asc",rock)) {
+			if (!loadFromArcgis("d:\\terrain_output\\save\\terrain_trlKt01.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
 			}
 			IntRasterMx terrain_pixel_types;
 			find_special_points(rock, slope_point, terrain_pixel_types);
-			saveToArcgis(terrain_pixel_types, 0, "special_points_slope");*/
+			saveToArcgis(terrain_pixel_types, 0, "special_points_slope");
 			break;
 			
 		}
@@ -142,7 +178,7 @@ bool CompositSimulation::run()
 	bool stopCondition = true;
 
 	// params of rfRainfallRunoff
-	double velocity_coefficent = 1.0;
+	double velocity_coefficent = 10.0;
 
 	// params of rfCatchmentBasedEstimation
 	DblRasterMx mxFluid;
@@ -229,7 +265,6 @@ bool CompositSimulation::run()
 				break;
 				case rfCatchmentBasedEstimation:
 				{
-					// mldd of water surface
 					MultiflowDMatrix  terrainMLDD;
 					multiflowLDD( 1.0, terrain, terrainMLDD, false);
 					DblRasterMx mxAccflux;
@@ -298,10 +333,15 @@ bool CompositSimulation::run()
 			*/
 			terrain = rock + soil;
 
-			
 			DblRasterMx kTectIteration;
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
-			Edges = Edges-kTectIteration;
+
+			// spatially variing uplift
+
+			// horizontal advection
+
+			// lower Edges
+			Edges = Edges; //Edges-kTectIteration;
 			    size_t j = 0;
 				size_t l = 0;
 			   for ( j = 0; j < nSizeY; j++ ){				 
@@ -331,24 +371,24 @@ bool CompositSimulation::run()
 					saveToArcgis(terrain, log_index, "terrain");
 					nextLogTime+=logTimeInc;
 					++log_index;
-			   //mx1=terrain;
-			   //slope(mx1,mxSlope); 
-			   //max(mxSlope,zeroPlusABit, mxSlopeCorrected);
-			   //lddcreate(mx1, mxLDD, true);
-			   //multiflowLDD( one, mx1, mxMLDD,true);
-			   //semiMultiflowLDD(mx1, mxSMLDD, true);
-			   //diagonal(mxMLDD, mxDiagonal);
-			   //accflux(mxMLDD,mxFluid,mxAccflux,accuFluxLimitRate);					  
-			   //longestflowpathlength(mxSMLDD, mxLongest);
-			   //max(mxLongest, five, mxLongest);
-			   //log10(mxLongest, logMxLongest);
-			   //log10(mxAccflux, logMxAccflux);
-			   //elongation = logMxLongest / logMxAccflux;	   
-			   //upstreammax( mxMLDD, mxAccflux, mxUpstreamMax, upstreamMaxAreaPosition, true);
+			   mx1=terrain;
+			   slope(mx1,mxSlope); 
+			   max(mxSlope,zeroPlusABit, mxSlopeCorrected);			  
+			   multiflowLDD( 1.0, mx1, terrainMLDD, true);
+			   semiMultiflowLDD(mx1, mxSMLDD, true);
+			   diagonal(terrainMLDD, mxDiagonal);
+			   accflux(terrainMLDD,mxFluid,mxAccflux,0.0);				  
+			   longestflowpathlength(mxSMLDD, mxLongest);
+			   max(mxLongest, five, mxLongest);
+			   log10(mxLongest, logMxLongest);
+			   log10(mxAccflux, logMxAccflux);
+			   elongation = logMxLongest / logMxAccflux;	   
+			   
+			   upstreammax( terrainMLDD, mxAccflux, mxUpstreamMax, upstreamMaxAreaPosition, true);
 			   //downstreammax( mxMLDD, mxAccflux, mxDownstreamMax, downstreamMaxAreaPosition, true);
 			   //upstreamtotal(mxMLDD, mxAccflux, mxUpstreamTotal, true,true);	
-			   //diagonal(upstreamMaxAreaPosition, upstreamMxDiagonal);
-			   //dAdL = (mxAccflux - mxUpstreamMax) * upstreamMxDiagonal;
+			   diagonal(upstreamMaxAreaPosition, upstreamMxDiagonal);
+			   dAdL = (mxAccflux - mxUpstreamMax) * upstreamMxDiagonal;
 			   ////max(dAdL, fifty, dAdL);
 			   ////getMatrixPosItems(mxSlopeCorrected,upstreamMaxAreaPosition,upstreamSlope);
 			   ////dSdL = (mxSlopeCorrected - upstreamSlope) * upstreamMxDiagonal;
@@ -374,6 +414,94 @@ bool CompositSimulation::run()
 			   //spreadLDD(mxMLDD,crest,mxShortest,0.0);
 			   //spreadLDDMax( mxSMLDD, crest, mxLongest,0.0 );
 			   //incision = mxLongest - mxShortest;
+			   IntRasterMx terrain_pixel_types;
+			   find_special_points(rock, slope_point |, terrain_pixel_types);
+			
+
+			   saveToArcgis(mx1,log_index,"mx2");			   
+					saveToArcgis(mx1,log_index,"mx1");
+					saveToArcgis(mxAccflux,log_index,"accflux");
+					saveToArcgis(mxSlopeCorrected,log_index,"slope");
+					//saveToAsc(sedOut, i, "sedOut", true);
+					//saveToAsc(sedIn, i, "sedIn", true);
+					//saveToAsc(change, i, "change",true);
+					/*saveToAsc(mxLDD, i, "mxLDD");
+					saveToAsc(mxMLDD, i, "mxMLDD");
+					saveToAsc(mxDiagonal, i, "mxDiagonal");
+					saveToAsc(streams, i, "streams");
+					saveToAsc(susp, i, "susp");
+					saveToAsc(mxUpstreamMax, i, "mxUpstreamMax");
+					saveToAsc(crest, i, "crest",true);
+					saveToAsc(mxUpstreamRatio, i, "mxUpstreamRatio");
+					saveToAsc(upstreamMaxAreaPosition,i,"upstreamMaxAreaPosition");
+					saveToAsc(mxDiagonal, i, "mxDiagonal");
+					saveToAsc(suspSedOut, i, "suspSedOut");
+					saveToAsc(suspSedIn, i, "suspSedIn");
+					saveToAsc(suspSedOutLocal, i, "suspSedOutLocal");
+					saveToAsc(change2, i, "change2");
+					saveToAsc(mxFluid, i, "mxFluid");
+					saveToAsc(mxDownstreamMax, i, "mxDownstreamMax");
+					saveToAsc(mxDownstreamRatio, i, "mxDownstreamRatio",true);
+					saveToAsc(points, i, "points");
+					saveToAsc(points2, i, "points2");
+					saveToAsc(path1, i, "path1",true);
+					saveToAsc(path2, i, "path2",true);
+					saveToAsc(catchment1, i, "catchment1");
+					saveToAsc(catchment3, i, "catchment3");
+					saveToAsc(streams2, i, "streams2",true);
+					saveToAsc(downstreamDAdL, i, "downstreamDAdL");
+					saveToAsc(dAdL2, i, "dAdL2");
+					saveToAsc(focusPoint, i, "focusPoint");
+					saveToAsc(focusPoint2, i, "focusPoint2");
+					saveToAsc(focusPoint3, i, "focusPoint3");
+					saveToAsc(catchment2, i, "catchment2");
+					saveToAsc(yCoordinate, i, "yCoordinate");
+					saveToAsc(xCoordinate, i, "xCoordinate");
+					saveToAsc(circle2, i, "circle2");
+					saveToAsc(distance, i, "distance");
+					saveToAsc(distance2, i, "distance2");
+					saveToAsc(line1, i, "line1");
+					saveToAsc(hollow, i, "hollow");
+					saveToAsc(fpAccflux, i, "fpAccflux",true);
+					saveToAsc(fpSlope, i, "fpSlope",true);
+					saveToAsc(fpLongest, i, "fpLongest",true);
+					saveToAsc(fpYCoord, i, "fpYCoord");
+					saveToAsc(fpelo, i, "fpelo",true);
+					saveToAsc(fpShortest, i, "fpShortest",true);
+					saveToAsc(fp2elo, i, "fp2elo",true);
+					saveToAsc(fp2Shortest, i, "fp2Shortest",true);
+					saveToAsc(fp2Accflux, i, "fp2Accflux",true);
+					saveToAsc(fp2Slope, i, "fp2Slope",true);
+					saveToAsc(fp2Longest, i, "fp2Longest",true);
+					saveToAsc(fp2YCoord, i, "fp2YCoord");
+					saveToAsc(fp3Accflux, i, "fp3Accflux");
+					saveToAsc(fp3Slope, i, "fp3Slope");
+					saveToAsc(fp3Longest, i, "fp3Longest");
+					saveToAsc(dAdL, i, "dAdL",true);
+					saveToAsc(upstreamDAdL, i, "upstreamDAdL");
+					saveToAsc(dAdL2, i, "dAdL2");
+					saveToAsc(upstreamSlope, i,"upstreamSlope");
+					saveToAsc(dSdL, i, "dSdL",true);
+					saveToAsc(valve, i, "valve",true);
+				    saveToAsc(streampower, i, "streampower",true);
+					saveToAsc(streampowervalve, i, "streampowervalve",true);
+					
+					saveToAsc(dSdLS, i, "dSdLS",true);
+				    saveToAsc(fpdAdLA, i, "fpdAdLA",true);
+					saveToAsc(fpdSdLS, i, "fpdSdLS",true);
+					saveToAsc(fp2dAdLA, i, "fp2dAdLA",true);
+					saveToAsc(fp2dSdLS, i, "fp2dSdLS",true);*/
+					saveToArcgis(mxUpstreamMax, log_index, "mxUpstreamMax");
+					saveToArcgis(dAdL, log_index, "dAdL");
+					saveToArcgis(mxLongest, log_index, "mxLongest");
+					//saveToAsc(mxShortest, i, "mxShortest",true);
+					//saveToAsc(sumdAdL, i, "sumdAdL",true);
+					//saveToAsc(sumdSdL, i, "sumdSdL",true);
+					saveToArcgis(elongation, log_index, "elongation");
+					//saveToAsc(incision, i, "incision",true);
+					//saveToAsc(fpsumdAdL, i, "fpsumdAdL",true);
+					//saveToAsc(fp2sumdAdL, i, "fp2sumdAdL",true);
+					saveToArcgis(terrain_pixel_types, log_index, "special_points_slope");
 
 		}
 		iteration_nr++;

@@ -59,7 +59,7 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stTotalRemoval;
 
-	double rainTime = 1.01;
+	double rainTime = 1.1;
 	double max_iteration_time = 1;
 	double min_iteration_time = 0.001;
 	
@@ -75,6 +75,8 @@ bool CompositSimulation::run()
 	erosionRateParams.simple_diffusion = true;
 
 	double kTect = 0.1;
+	double kHor = 0;
+	double kTectSpread = 0.0;
 
 	// common variables
 	size_t nSizeX = 30;
@@ -132,7 +134,7 @@ bool CompositSimulation::run()
 	DblRasterMx soil;
 
 	DblRasterMx Edges;
-	mapattr(nSizeY,nSizeX,pixelSize,66, Edges);
+	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
 
 	//initial terrain and ground 
 	switch (groundProductionType)
@@ -159,7 +161,7 @@ bool CompositSimulation::run()
 				return false;
 			}
 			IntRasterMx terrain_pixel_types;
-			find_special_points(rock, slope_point, terrain_pixel_types);
+			find_special_points(rock, channel, terrain_pixel_types);
 			saveToArcgis(terrain_pixel_types, 0, "special_points_slope");
 			break;
 			
@@ -187,9 +189,19 @@ bool CompositSimulation::run()
 
 	size_t iteration_nr = 0;
 	double waterOnPits = 0.0;
-	double logTimeInc = 1.0;
-	double nextLogTime = logTimeInc;
+	double logTimeInc = 0.1;
+	double nextLogTime = 0.0;
 	int log_index = 1;
+
+	
+	double shiftTimeInc = kHor > 0 ? pixelSize/kHor : DoubleUtil::getMAXValue();
+	double nextShiftTime = shiftTimeInc;
+
+	double UpliftTimeInc = kTectSpread > 0 ? pixelSize/kTectSpread : DoubleUtil::getMAXValue();
+	double nextUpliftTime = UpliftTimeInc;
+	size_t nextUpliftCol = 0;
+	
+
 	while (stopCondition) 
 	{
 		bool redo_iteration = true;
@@ -331,17 +343,36 @@ bool CompositSimulation::run()
 				stopCondition = false;
 			}
 			*/
-			terrain = rock + soil;
+			
 
 			DblRasterMx kTectIteration;
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
-
+			elapsedTime+=iteration_time;
+			std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
+			
 			// spatially variing uplift
-
+			if (elapsedTime > nextUpliftTime) {
+				if (nextUpliftCol < nSizeX) {			
+					++nextUpliftCol;
+				}
+				nextUpliftTime+=UpliftTimeInc; 
+			}
+			double upliftVal = iteration_time * kTect;
+			for (size_t col = 0; col < nextUpliftCol; ++col) {
+				for (size_t row = 0; row < nSizeY; ++row) {
+					rock(row, col)+=upliftVal;
+				}
+			}
+		
 			// horizontal advection
-
+			if (elapsedTime >= nextShiftTime) {
+				nextShiftTime+=shiftTimeInc;
+				shift_left(rock);
+				shift_left(soil);
+			}
+			
 			// lower Edges
-			Edges = Edges; //Edges-kTectIteration;
+			Edges = Edges-kTectIteration;
 			    size_t j = 0;
 				size_t l = 0;
 			   for ( j = 0; j < nSizeY; j++ ){				 
@@ -359,14 +390,14 @@ bool CompositSimulation::run()
 					   rock(0,j) = Edges(0,j);
 			   }
 
+			terrain = rock + soil;
 			mxFlowDepth = copyOfFlowDepth;
 			accumulated_rain = copy_of_accumulated_rain;
 			elapsedRainTime = copy_of_elapsedRainTime;
 			redo_iteration = false;
 		}
 
-		elapsedTime+=iteration_time;
-		std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
+		
 		if (elapsedTime > nextLogTime){
 					saveToArcgis(terrain, log_index, "terrain");
 					nextLogTime+=logTimeInc;
@@ -374,8 +405,8 @@ bool CompositSimulation::run()
 			   mx1=terrain;
 			   slope(mx1,mxSlope); 
 			   max(mxSlope,zeroPlusABit, mxSlopeCorrected);			  
-			   multiflowLDD( 1.0, mx1, terrainMLDD, true);
-			   semiMultiflowLDD(mx1, mxSMLDD, true);
+			   multiflowLDD( 1.0, mx1, terrainMLDD, false);
+			   semiMultiflowLDD(mx1, mxSMLDD, false);
 			   diagonal(terrainMLDD, mxDiagonal);
 			   accflux(terrainMLDD,mxFluid,mxAccflux,0.0);				  
 			   longestflowpathlength(mxSMLDD, mxLongest);
@@ -415,7 +446,7 @@ bool CompositSimulation::run()
 			   //spreadLDDMax( mxSMLDD, crest, mxLongest,0.0 );
 			   //incision = mxLongest - mxShortest;
 			   IntRasterMx terrain_pixel_types;
-			   find_special_points(rock, slope_point |, terrain_pixel_types);
+			   find_special_points(rock, channel,  terrain_pixel_types);
 			
 
 			   saveToArcgis(mx1,log_index,"mx2");			   

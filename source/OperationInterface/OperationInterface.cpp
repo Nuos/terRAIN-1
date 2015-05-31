@@ -430,7 +430,13 @@ void upstreamtotal( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	RasterPositionMatrix mxPosDummy;
 	mxPosDummy.initlike(mx);
 
-	mfMLDDUpStreamTotal Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPosDummy.begin(),mfMLDDUpStreamTotal::typeFunctor(bDiagonal,inFlow));
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin();
+	MultiflowDMatrix::iterator endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPosDummy = mxPosDummy.begin();
+
+	mfMLDDUpStreamTotal Obj(iLDD,endLDD,imx,iRet,iPosDummy,mfMLDDUpStreamTotal::typeFunctor(bDiagonal,inFlow));
 
 	_RUN(Obj)
 }
@@ -450,7 +456,14 @@ void upstreammax( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mxRe
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfMLDDUpStreamMax Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfMLDDUpStreamMax::typeFunctor(inFlow));
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin();
+	MultiflowDMatrix::iterator endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+
+	mfMLDDUpStreamMax Obj(iLDD, endLDD, imx,iRet ,iPos,mfMLDDUpStreamMax::typeFunctor(inFlow));
 
 	_RUN(Obj)
 }
@@ -524,7 +537,9 @@ void longestflowpathlength(MultiflowDMatrix & mxLDD, DblRasterMx & mxRet)
 	double dblTmp = 0.0;
 	mxRet.fill(dblTmp);
 
-	funcLongestFlowPathLengthMLDD Obj( mxLDD.begin(), mxLDD.end(),mxRet);
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin();
+	MultiflowDMatrix::iterator endLDD = mxLDD.end();
+	funcLongestFlowPathLengthMLDD Obj(iLDD, endLDD, mxRet);
 
 	_RUN(Obj)
 }
@@ -849,7 +864,11 @@ void diagonal(RasterPositionMatrix & mxPos,DblRasterMx & mxRet)
 {
 	mxRet.initlike(mxPos);
 
-	mfDiagonalPosition Obj(mxPos.begin(), mxPos.end(),mxRet.begin(),mfDiagonalPosition::typeFunctor());
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+	RasterPositionMatrix::iterator endPos = mxPos.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	mfDiagonalPosition Obj(iPos, endPos, iRet,mfDiagonalPosition::typeFunctor());
 	_RUN(Obj)
 }
 
@@ -1396,6 +1415,30 @@ bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx)
 		return false;
 
 	return true;
+}
+
+void shift_right(DblRasterMx & mx)
+{
+	size_t cols = mx.getColNr();
+	size_t rows = mx.getRowNr();
+	for (size_t col = cols - 1; col > 0; --col) {
+		size_t prev_col_index = col - 1;
+		for (size_t row = 0; row < rows; ++row) {
+			mx(row, col) = mx(row, prev_col_index);
+		}
+	}
+}
+
+void shift_left(DblRasterMx & mx)
+{
+	size_t cols = mx.getColNr();
+	size_t rows = mx.getRowNr();
+	for (size_t col = 0; col < cols-1;  ++col) {
+		size_t next_col_index = col + 1;
+		for (size_t row = 0; row < rows; ++row) {
+			mx(row, col) = mx(row, next_col_index);
+		}
+	}
 }
 
 }

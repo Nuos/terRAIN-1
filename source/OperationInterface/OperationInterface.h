@@ -190,7 +190,8 @@ void multiflowAngles(DblRasterMx & mxOp, MultiflowDMatrix & mxRet, bool bFillPit
 double compute_velocity_mldd(MultiflowDMatrix & fluxDistribution, MultiflowDMatrix & flowAngles, double c,  MultiflowDMatrix & mxVelocity);
 void compute_outflow_flux_mldd( MultiflowDMatrix & mxVelocity, MultiflowDMatrix & fluxDistribution, double dt, MultiflowDMatrix & mxRet);
 void compute_material_movement(MultiflowDMatrix & mxOutFlowFlux, DblRasterMx & mxRetInFlow, DblRasterMx & mxRetOutFlow);
-
+void shift_right(DblRasterMx & mx);
+void shift_left(DblRasterMx & mx);
 
 enum SpecialPoint
 {

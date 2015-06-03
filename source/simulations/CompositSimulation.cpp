@@ -48,8 +48,8 @@ bool CompositSimulation::run()
 	setOutputDirectory("d:\\terrain_output");
 	// simulation settings
 	//setOutflowType(ofAllSides);
-	//setOutflowType(ofTopAndBottomSide);
-	setOutflowType(ofLeftAndRightSide);
+	setOutflowType(ofTopAndBottomSide);
+	//setOutflowType(ofLeftAndRightSide);
 	
 	SoilProductionType groundProductionType = gpNone;
 	
@@ -61,21 +61,21 @@ bool CompositSimulation::run()
 
 	double rainTime = 100;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.00001;
+	double min_iteration_time = 0.001;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
 	erosionRateParams.infinite_erosion_rate = 1;
 	erosionRateParams.diffusion_exponent = 2.0;
-	erosionRateParams.diffusive_const =  0.00000;
+	erosionRateParams.diffusive_const =  0.0001;
 	erosionRateParams.fluvial_const = 0.001;
 	erosionRateParams.min_elevation_diff = 1e-7;
 	erosionRateParams.runoff_exponent = 1.5;
 	erosionRateParams.slope_exponent = 1.5;
 	erosionRateParams.simple_diffusion = true;
 
-	double kTect = 1;
-	double kHor = 1;
+	double kTect = 0.1;
+	double kHor = 0.0;
 	double kTectSpread = 0.0;
 
 	// common variables
@@ -111,6 +111,8 @@ bool CompositSimulation::run()
 	DblRasterMx mxSedInFluvial;
 	DblRasterMx mxSedOutFluvial;
 	DblRasterMx Edges;
+	DblRasterMx xCoord;
+	DblRasterMx yCoord;
 
 	MultiflowDMatrix mxSMLDD;
 	MultiflowDMatrix terrainMLDD;
@@ -138,7 +140,8 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, streams);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, path1);
 	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
-	
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, xCoord);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, yCoord);
 	
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
@@ -172,6 +175,20 @@ bool CompositSimulation::run()
 			rock = rock + randomNoise * multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
 			saveToArcgis(randomNoise, 0, "randomNoise");
+
+			xcoordinate(rock, xCoord);
+			ycoordinate(rock, yCoord);
+			int j = 0;
+			int l = 0;
+			for ( j = 0; j < nSizeX; j++ ){		
+						for ( l = 0; l < nSizeY; l++ ){			
+							if (j < 15){
+								rock(l,j) = 100 + xCoord(l,j) * 0.1;                 
+							} else {
+								rock(l,j) = 100 + 30 - xCoord(l,j) * 0.1;
+							}
+						}
+			   }
 			
 			/*if (!loadFromArcgis("d:\\terrain_output\\save\\terrain_trlKt01.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;

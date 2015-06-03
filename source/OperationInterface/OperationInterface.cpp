@@ -500,7 +500,12 @@ void downstreamtotal( DblRasterMx & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet
 	RasterPositionMatrix mxPosDummy;
 	mxPosDummy.initlike(mx);
 
-	mfLDDDownStreamTotal Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPosDummy.begin(),mfLDDDownStreamTotal::typeFunctor());
+	DblRasterMx::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPosDummy.begin();
+
+	mfLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet, iPos, mfLDDDownStreamTotal::typeFunctor());
 
 	_RUN(Obj)
 }
@@ -513,7 +518,13 @@ void downstreamtotal( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & 
 	RasterPositionMatrix mxPosDummy;
 	mxPosDummy.initlike(mx);
 
-	mfMLDDDownStreamTotal Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPosDummy.begin(),mfMLDDDownStreamTotal::typeFunctor());
+
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPosDummy.begin();
+
+	mfMLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet,iPos,mfMLDDDownStreamTotal::typeFunctor());
 
 	_RUN(Obj)
 }
@@ -525,7 +536,9 @@ void longestflowpathlength(DblRasterMx & mxLDD, DblRasterMx & mxRet)
 	double dblTmp = 0.0;
 	mxRet.fill(dblTmp);
 
-	funcLongestFlowPathLengthLDD Obj( mxLDD.begin(), mxLDD.end(),mxRet);
+	DblRasterMx::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+
+	funcLongestFlowPathLengthLDD Obj(iLDD, endLDD,mxRet);
 
 	_RUN(Obj)
 }
@@ -573,7 +586,12 @@ void downstreammin( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfMLDDDownStreamMin Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfMLDDDownStreamMin::typeFunctor(inFlow));
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+
+	mfMLDDDownStreamMin Obj(iLDD,endLDD, imx,iRet,iPos,mfMLDDDownStreamMin::typeFunctor(inFlow));
 
 	_RUN(Obj)
 }
@@ -583,7 +601,12 @@ void downstreammax( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfMLDDDownStreamMax Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfMLDDDownStreamMax::typeFunctor(inFlow));
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+
+	mfMLDDDownStreamMax Obj(iLDD,endLDD, imx,iRet,iPos,mfMLDDDownStreamMax::typeFunctor(inFlow));
 
 	_RUN(Obj)
 }

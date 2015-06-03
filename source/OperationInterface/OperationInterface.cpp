@@ -1020,7 +1020,7 @@ bool compute_flux_distribution(MultiflowDMatrix & mxLDD, DblRasterMx & mxFlux, M
 
 	for (; iLDD != endLDD; ++iLDD, ++iFlux, ++iRet) {
 		double currentFluid = *iFlux;
-		for (char i = 1; i < 9; i++) {
+		for (char i = 1; i <= 9; i++) {
 			if (i==5)
 				continue;
 			if (!iLDD.isValidItemByChainCode(i))

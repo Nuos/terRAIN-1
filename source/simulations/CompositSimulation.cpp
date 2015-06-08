@@ -43,6 +43,78 @@ enum SedimentTransportType
 	stPixelPixelTransport
 };
 
+/*
+bool symm(DblRasterMx & mx)
+{
+	size_t rows = mx.getRowNr();
+	size_t cols = mx.getColNr();
+
+	size_t s = cols/2;
+
+	for (size_t row = 0; row < rows; ++row) {
+		for (size_t col = 0; col < s; ++col) {
+			double v1 = mx(row, col);
+			double v2 = mx(row, cols - col - 1);
+			if (fabs(v1 - v2) > 1e-6)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+
+bool symm(MultiflowDMatrix & mx)
+{
+	size_t rows = mx.getRowNr();
+	size_t cols = mx.getColNr();
+
+	size_t s = cols/2;
+
+	for (size_t row = 0; row < rows; ++row) {
+		for (size_t col = 0; col < s; ++col) {
+			DoubleChainCodeData & d1 = mx(row, col);	
+			DoubleChainCodeData & d2 = mx(row, cols - col - 1);
+
+			if (fabs(d1.getByChainCode(1) - fabs(d2.getByChainCode(3)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(2) - fabs(d2.getByChainCode(2)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(3) - fabs(d2.getByChainCode(1)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(4) - fabs(d2.getByChainCode(6)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(6) - fabs(d2.getByChainCode(4)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(7) - fabs(d2.getByChainCode(9)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(8) - fabs(d2.getByChainCode(8)))> 1e-6){
+				return false;
+			}
+
+			if (fabs(d1.getByChainCode(9) - fabs(d2.getByChainCode(7)))> 1e-6){
+				return false;
+			}
+
+		}
+	}
+
+	return true;
+}
+
+*/
 bool CompositSimulation::run()
 {
 	setOutputDirectory("d:\\terrain_output2");
@@ -194,6 +266,7 @@ bool CompositSimulation::run()
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
 			}*/
+			saveToArcgis(rock, 0, "base");
 			IntRasterMx terrain_pixel_types;
 			find_special_points(rock, channel, terrain_pixel_types);
 			saveToArcgis(terrain_pixel_types, 0, "special_points_slope");
@@ -326,10 +399,9 @@ bool CompositSimulation::run()
 
 			MultiflowDMatrix  mxMLLDSlope;
 			multiflowAngles(terrain, mxMLLDSlope, false);
-			
 			erosion_rate_results erosion_rates;
 			double max_time_interval_of_sediment_flow = 0.8 *compute_erosion_rate(erosionRateParams, terrain, runoff_distribution, mxMLLDSlope, erosion_rates);
-		
+
 			max_time_interval_of_sediment_flow = ::min(max_time_interval_of_sediment_flow, max_iteration_time);
 			max_time_interval_of_sediment_flow = ::max(max_time_interval_of_sediment_flow, min_iteration_time);
 			switch (runoffProductionType)

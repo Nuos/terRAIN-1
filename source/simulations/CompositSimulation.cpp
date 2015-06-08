@@ -45,7 +45,7 @@ enum SedimentTransportType
 
 bool CompositSimulation::run()
 {
-	setOutputDirectory("d:\\terrain_output");
+	setOutputDirectory("d:\\terrain_output2");
 	// simulation settings
 	//setOutflowType(ofAllSides);
 	setOutflowType(ofTopAndBottomSide);
@@ -61,14 +61,14 @@ bool CompositSimulation::run()
 
 	double rainTime = 100;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.001;
+	double min_iteration_time = 0.01;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
 	erosionRateParams.infinite_erosion_rate = 1;
 	erosionRateParams.diffusion_exponent = 2.0;
-	erosionRateParams.diffusive_const =  0.0001;
-	erosionRateParams.fluvial_const = 0.001;
+	erosionRateParams.diffusive_const =  0.000; //0.0001;
+	erosionRateParams.fluvial_const = 0.01; //0.001;
 	erosionRateParams.min_elevation_diff = 1e-7;
 	erosionRateParams.runoff_exponent = 1.5;
 	erosionRateParams.slope_exponent = 1.5;
@@ -312,7 +312,7 @@ bool CompositSimulation::run()
 				case rfCatchmentBasedEstimation:
 				{
 					MultiflowDMatrix  terrainMLDD;
-					multiflowLDD( 1.0, terrain, terrainMLDD, false);
+					multiflowLDD( 99, terrain, terrainMLDD, false);
 					DblRasterMx mxAccflux;
 					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
 					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);

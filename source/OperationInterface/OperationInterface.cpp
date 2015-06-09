@@ -55,56 +55,64 @@ void mapattr(size_t nRows, size_t nCols, double dblPixelSize,double dblInitValue
 
 void uniform( DblRasterMx & mxRet )
 {
-	mfUniform Obj(mxRet,mfUniform::typeFunctor());
+	mfUniform::typeFunctor functor; 
+	mfUniform Obj(mxRet, functor);
 
 	_RUN(Obj)
 }
 
 void add(  DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfAdd addObj(mxOp1,mxOp2,mxRet,mfAdd::typeFunctor());
+	mfAdd::typeFunctor functor;
+	mfAdd addObj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(addObj)
 }
 
 void sup( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfSubt supObj(mxOp1,mxOp2,mxRet,mfSubt::typeFunctor());
+	mfSubt::typeFunctor functor;
+	mfSubt supObj(mxOp1,mxOp2,mxRet,functor);
 
 	_RUN(supObj)
 }
 
 void mul( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfMul mulObj(mxOp1,mxOp2,mxRet,mfMul::typeFunctor());
+	mfMul::typeFunctor functor;
+	mfMul mulObj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(mulObj)
 }
 
 void fraction( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfFraction fractionObj(mxOp1,mxOp2,mxRet,mfFraction::typeFunctor());
+	mfFraction::typeFunctor functor;
+	mfFraction fractionObj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(fractionObj)
 }
 
 void power( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfPower powerObj(mxOp1,mxOp2,mxRet,mfPower::typeFunctor());
+	mfPower::typeFunctor functor;
+	mfPower powerObj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(powerObj)
 }
 
 void abs( DblRasterMx & mxOp, DblRasterMx & mxRet )
 {
-	mfAbs absObj(mxOp,mxRet,mfAbs::typeFunctor());
+	mfAbs::typeFunctor functor;
+	mfAbs absObj(mxOp,mxRet, functor);
 
 	_RUN(absObj)
 }
 
 void sin(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 {
-	mfSin sinObj(mxOp,mxRet,mfSin::typeFunctor(bRad));
+	mfSin::typeFunctor functor(bRad);
+	mfSin sinObj(mxOp,mxRet, functor);
 
 	_RUN(sinObj)
 
@@ -112,7 +120,8 @@ void sin(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 
 void cos(  DblRasterMx & mxOp, bool bRad,  DblRasterMx & mxRet)
 {
-	mfCos cosObj(mxOp,mxRet,mfCos::typeFunctor(bRad));
+	mfCos::typeFunctor functor(bRad);
+	mfCos cosObj(mxOp,mxRet, functor);
 
 	_RUN(cosObj)
 
@@ -120,7 +129,8 @@ void cos(  DblRasterMx & mxOp, bool bRad,  DblRasterMx & mxRet)
 
 void tg(  DblRasterMx & mxOp, bool bRad,  DblRasterMx & mxRet)
 {
-	mfTan tanObj(mxOp,mxRet,mfTan::typeFunctor(bRad));
+	mfTan::typeFunctor functor(bRad);
+	mfTan tanObj(mxOp,mxRet, functor);
 
 	_RUN(tanObj)
 
@@ -128,7 +138,8 @@ void tg(  DblRasterMx & mxOp, bool bRad,  DblRasterMx & mxRet)
 
 void ctg(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 {
-	mfCTan ctanObj(mxOp,mxRet,mfCTan::typeFunctor(bRad));
+	mfCTan::typeFunctor functor(bRad);
+	mfCTan ctanObj(mxOp,mxRet, functor);
 	
 	_RUN(ctanObj)
 
@@ -136,28 +147,32 @@ void ctg(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 
 void asin(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 {
-	mfArSin Obj(mxOp,mxRet,mfArSin::typeFunctor(bRad));
+	mfArSin::typeFunctor functor(bRad);
+	mfArSin Obj(mxOp,mxRet, functor);
 	
 	_RUN(Obj)
 }
 
 void acos(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 {
-	mfArCos Obj(mxOp,mxRet,mfArCos::typeFunctor(bRad));
+	mfArCos::typeFunctor functor(bRad);
+	mfArCos Obj(mxOp,mxRet, functor);
 	
 	_RUN(Obj)
 }
 
 void atg(  DblRasterMx & mxOp, bool bRad, DblRasterMx & mxRet)
 {
-	mfArTan Obj(mxOp,mxRet,mfArTan::typeFunctor(bRad));
+	mfArTan::typeFunctor functor(bRad);
+	mfArTan Obj(mxOp,mxRet, functor);
 	
 	_RUN(Obj)
 }
 
 void actg(  DblRasterMx & mxOp,bool bRad, DblRasterMx & mxRet)
 {
-	mfArCTan Obj(mxOp,mxRet,mfArCTan::typeFunctor(bRad));
+	mfArCTan::typeFunctor functor(bRad);
+	mfArCTan Obj(mxOp,mxRet, functor);
 	
 	_RUN(Obj)
 }
@@ -165,28 +180,33 @@ void actg(  DblRasterMx & mxOp,bool bRad, DblRasterMx & mxRet)
 
 void ln(  DblRasterMx & mxOp, DblRasterMx & mxRet)
 {
-	mfLn Obj(mxOp,mxRet,mfLn::typeFunctor());
+	mfLn::typeFunctor functor;
+	mfLn Obj(mxOp,mxRet, functor);
 
 	_RUN(Obj)
 }
 
 void log10(  DblRasterMx & mxOp, DblRasterMx & mxRet)
 {
-	mfLog10 Obj(mxOp,mxRet,mfLog10::typeFunctor());
+	mfLog10::typeFunctor functor;
+	mfLog10 Obj(mxOp,mxRet, functor);
 
 	_RUN(Obj)
 }
 
 void exp(  DblRasterMx & mxOp,double dblBase, DblRasterMx & mxRet)
 {
-	mfExp Obj(mxOp,mxRet,mfExp::typeFunctor(dblBase));
+	mfExp::typeFunctor functor(dblBase);
+	mfExp Obj(mxOp,mxRet, functor);
 
 	_RUN(Obj)
 }
 
 void cover(  DblRasterMx & mxOp1,  DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfCovewWithMatrix Obj(mxOp1,mxOp2,mxRet,mfCovewWithMatrix::typeFunctor());
+	mfCovewWithMatrix::typeFunctor functor;
+
+	mfCovewWithMatrix Obj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(Obj)
 
@@ -194,7 +214,8 @@ void cover(  DblRasterMx & mxOp1,  DblRasterMx & mxOp2, DblRasterMx & mxRet )
 
 void cover(  DblRasterMx & mxOp1, double dblProxy, DblRasterMx & mxRet )
 {
-	mfCovewWithScalar Obj(mxOp1,mxRet,mfCovewWithScalar::typeFunctor(dblProxy));
+	mfCovewWithScalar::typeFunctor functor(dblProxy);
+	mfCovewWithScalar Obj(mxOp1,mxRet, functor);
 
 	_RUN(Obj)
 }
@@ -218,7 +239,11 @@ void slope(  DblRasterMx & mxOp, DblRasterMx & mxRet )
 	
 	mxRet.initlike(mxOp);
 
-	mfSlope Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),1,mfSlope::typeFunctor());
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	mfSlope::typeFunctor functor;
+
+	mfSlope Obj(iOp, endOp , iRet ,1, functor);
 
 	_RUN(Obj)
 }
@@ -229,7 +254,7 @@ void lddcreate(  DblRasterMx & mxOp, DblRasterMx & mxRet,bool bFillPits )
 	mxRet.initlike(mxOp);
 
 	DblRasterMx::iterator iRet = mxRet.begin();
-
+	mfLDD::typeFunctor functor;
 	if (bFillPits){
 		DblRasterMx mx1;
 
@@ -242,14 +267,14 @@ void lddcreate(  DblRasterMx & mxOp, DblRasterMx & mxRet,bool bFillPits )
 		obj.run();
 
 		DblRasterMx::iterator iMx1 = mx1.begin(), endMx1 = mx1.end();
-		mfLDD Obj(iMx1,endMx1,iRet,1,mfLDD::typeFunctor());
+		mfLDD Obj(iMx1,endMx1,iRet,1, functor);
 
 		_RUN(Obj)
 	}else{
 
 		DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
 
-		mfLDD Obj(iOp,endOp ,iRet ,1,mfLDD::typeFunctor());
+		mfLDD Obj(iOp,endOp ,iRet ,1,functor);
 		_RUN(Obj)
 	}
 }
@@ -260,7 +285,8 @@ void findpits(  DblRasterMx & mxOp, DblRasterMx & mxRet )
 	
 	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
 	DblRasterMx::iterator iRet = mxRet.begin();
-	mfFindPITs Obj(iOp ,endOp ,iRet ,1,mfFindPITs::typeFunctor());
+	mfFindPITs::typeFunctor functor;
+	mfFindPITs Obj(iOp ,endOp ,iRet ,1, functor);
 
 	_RUN(Obj)
 }
@@ -417,7 +443,13 @@ void upstreamtotal( DblRasterMx & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet,b
 	RasterPositionMatrix mxPosDummy;
 	mxPosDummy.initlike(mx);
 
-	mfLDDUpStreamTotal Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPosDummy.begin(),mfLDDUpStreamTotal::typeFunctor(bDiagonal));
+	DblRasterMx::iterator ildd = mxLDD.begin(), endldd = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet  = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPosDummy.begin();
+	mfLDDUpStreamTotal::typeFunctor functor(bDiagonal);
+
+	mfLDDUpStreamTotal Obj(ildd, endldd, imx,iRet, iPos, functor);
 
 	_RUN(Obj)
 }
@@ -435,8 +467,9 @@ void upstreamtotal( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	DblRasterMx::iterator imx = mx.begin();
 	DblRasterMx::iterator iRet = mxRet.begin();
 	RasterPositionMatrix::iterator iPosDummy = mxPosDummy.begin();
+	mfMLDDUpStreamTotal::typeFunctor functor(bDiagonal,inFlow);
 
-	mfMLDDUpStreamTotal Obj(iLDD,endLDD,imx,iRet,iPosDummy,mfMLDDUpStreamTotal::typeFunctor(bDiagonal,inFlow));
+	mfMLDDUpStreamTotal Obj(iLDD,endLDD,imx,iRet,iPosDummy, functor);
 
 	_RUN(Obj)
 }
@@ -446,7 +479,13 @@ void upstreammax( DblRasterMx & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet,Ras
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfLDDUpStreamMax Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfLDDUpStreamMax::typeFunctor());
+	DblRasterMx::iterator ildd = mxLDD.begin(), endldd = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet  = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+	mfLDDUpStreamMax::typeFunctor functor;
+
+	mfLDDUpStreamMax Obj(ildd, endldd, imx,iRet , iPos, functor);
 
 	_RUN(Obj)
 }
@@ -460,10 +499,10 @@ void upstreammax( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mxRe
 	MultiflowDMatrix::iterator endLDD = mxLDD.end();
 	DblRasterMx::iterator imx = mx.begin();
 	DblRasterMx::iterator iRet = mxRet.begin();
-
 	RasterPositionMatrix::iterator iPos = mxPos.begin();
+	mfMLDDUpStreamMax::typeFunctor functor(inFlow);
 
-	mfMLDDUpStreamMax Obj(iLDD, endLDD, imx,iRet ,iPos,mfMLDDUpStreamMax::typeFunctor(inFlow));
+	mfMLDDUpStreamMax Obj(iLDD, endLDD, imx,iRet ,iPos, functor);
 
 	_RUN(Obj)
 }
@@ -474,7 +513,13 @@ void upstreammin( DblRasterMx & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet,Ras
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfLDDUpStreamMin Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfLDDUpStreamMin::typeFunctor());
+	DblRasterMx::iterator ildd = mxLDD.begin(), endldd = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet  = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+	mfLDDUpStreamMin::typeFunctor functor;
+
+	mfLDDUpStreamMin Obj(ildd,endldd, imx, iRet, iPos, functor);
 
 	_RUN(Obj)
 }
@@ -485,7 +530,15 @@ void upstreammin( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mxRe
 	mxRet.initlike(mx);
 	mxPos.initlike(mx);
 
-	mfMLDDUpStreamMin Obj(mxLDD.begin(),mxLDD.end(), mx.begin(),mxRet.begin(),mxPos.begin(),mfMLDDUpStreamMin::typeFunctor(inFlow));
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin();
+	MultiflowDMatrix::iterator endLDD = mxLDD.end();
+	DblRasterMx::iterator imx = mx.begin();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	RasterPositionMatrix::iterator iPos = mxPos.begin();
+	mfMLDDUpStreamMin::typeFunctor functor(inFlow);
+
+
+	mfMLDDUpStreamMin Obj(iLDD, endLDD, imx,iRet ,iPos, functor);
 
 	_RUN(Obj)
 }
@@ -504,8 +557,8 @@ void downstreamtotal( DblRasterMx & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet
 	DblRasterMx::iterator imx = mx.begin();
 	DblRasterMx::iterator iRet = mxRet.begin();
 	RasterPositionMatrix::iterator iPos = mxPosDummy.begin();
-
-	mfLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet, iPos, mfLDDDownStreamTotal::typeFunctor());
+	mfLDDDownStreamTotal::typeFunctor functor;
+	mfLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet, iPos, functor);
 
 	_RUN(Obj)
 }
@@ -523,8 +576,8 @@ void downstreamtotal( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & 
 	DblRasterMx::iterator imx = mx.begin();
 	DblRasterMx::iterator iRet = mxRet.begin();
 	RasterPositionMatrix::iterator iPos = mxPosDummy.begin();
-
-	mfMLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet,iPos,mfMLDDDownStreamTotal::typeFunctor());
+	mfMLDDDownStreamTotal::typeFunctor functor;
+	mfMLDDDownStreamTotal Obj(iLDD, endLDD, imx, iRet,iPos, functor);
 
 	_RUN(Obj)
 }
@@ -591,7 +644,8 @@ void downstreammin( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	DblRasterMx::iterator iRet = mxRet.begin();
 	RasterPositionMatrix::iterator iPos = mxPos.begin();
 
-	mfMLDDDownStreamMin Obj(iLDD,endLDD, imx,iRet,iPos,mfMLDDDownStreamMin::typeFunctor(inFlow));
+	mfMLDDDownStreamMin::typeFunctor functor(inFlow);
+	mfMLDDDownStreamMin Obj(iLDD,endLDD, imx,iRet,iPos, functor);
 
 	_RUN(Obj)
 }
@@ -606,21 +660,24 @@ void downstreammax( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mx
 	DblRasterMx::iterator iRet = mxRet.begin();
 	RasterPositionMatrix::iterator iPos = mxPos.begin();
 
-	mfMLDDDownStreamMax Obj(iLDD,endLDD, imx,iRet,iPos,mfMLDDDownStreamMax::typeFunctor(inFlow));
+	mfMLDDDownStreamMax::typeFunctor functor(inFlow);
+	mfMLDDDownStreamMax Obj(iLDD,endLDD, imx,iRet,iPos, functor);
 
 	_RUN(Obj)
 }
 
 void min( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfMin obj(mxOp1,mxOp2,mxRet,mfMin::typeFunctor());
+	mfMin::typeFunctor functor;
+	mfMin obj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(obj)
 }
 
 void max( DblRasterMx & mxOp1, DblRasterMx & mxOp2, DblRasterMx & mxRet )
 {
-	mfMax obj(mxOp1,mxOp2,mxRet,mfMax::typeFunctor());
+	mfMax::typeFunctor functor;
+	mfMax obj(mxOp1,mxOp2,mxRet, functor);
 
 	_RUN(obj)
 }
@@ -679,7 +736,11 @@ void diagonal(MultiflowDMatrix & mxLDD,DblRasterMx & mxRet)
 {	
 	mxRet.initlike(mxLDD);
 	
-	mfDiagonal obj(mxLDD.begin(),mxLDD.end(),mxRet.begin(),mfDiagonal::typeFunctor());
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin(), endLDD = mxLDD.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	mfDiagonal::typeFunctor functor;
+
+	mfDiagonal obj(iLDD,endLDD,iRet,functor);
 	
 	_RUN(obj);
 
@@ -717,7 +778,11 @@ void signStreamPixels(DblRasterMx & mxOp, DblRasterMx & mxRet, double mul)
 {
 	mxRet.initlike(mxOp);
 
-	mfSignStream Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),1,mfSignStream::typeFunctor(mul));
+	DblRasterMx::iterator imx = mxOp.begin(), endmx = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	mfSignStream::typeFunctor functor(mul);
+
+	mfSignStream Obj(imx, endmx, iRet, 1, functor);
 
 	_RUN(Obj)
 }
@@ -726,7 +791,12 @@ void signStreamPixels(MultiflowDMatrix & mxLDD, DblRasterMx & mxRet,double mul)
 {
 	mxRet.initlike(mxLDD);
 
-	mfSignStreamMLDD Obj(mxLDD.begin(),mxLDD.end(),mxRet.begin(),mfSignStreamMLDD::typeFunctor(mul));
+	MultiflowDMatrix::iterator imx = mxLDD.begin(), endmx = mxLDD.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+	mfSignStreamMLDD::typeFunctor functor(mul);
+
+
+	mfSignStreamMLDD Obj(imx,endmx,iRet,functor);
 
 	_RUN(Obj)
 }
@@ -768,8 +838,10 @@ void signStreamPixels(DblRasterMx & mxOp,MultiflowDMatrix & mxLDD, DblRasterMx &
 void windowAverage(DblRasterMx & mxOp, DblRasterMx & mxRet,double windowLength)
 {
 	mxRet.initlike(mxOp);
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
 	mfWindowAvarage::typeFunctor functor(windowLength,mxOp.getPixelSize());
-	mfWindowAvarage Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),functor.getWindowRadius(),functor);
+	mfWindowAvarage Obj(iOp, endOp ,iRet, functor.getWindowRadius(), functor);
 
 	_RUN(Obj)
 }
@@ -778,7 +850,10 @@ void windowMin(DblRasterMx & mxOp, DblRasterMx & mxRet,double windowLength)
 {
 	mxRet.initlike(mxOp);
 	mfWindowMin::typeFunctor functor(windowLength,mxOp.getPixelSize());
-	mfWindowMin Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),functor.getWindowRadius(),functor);
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	mfWindowMin Obj(iOp,endOp,iRet,functor.getWindowRadius(),functor);
 
 	_RUN(Obj)
 }
@@ -787,7 +862,10 @@ void windowMax(DblRasterMx & mxOp, DblRasterMx & mxRet,double windowLength)
 {
 	mxRet.initlike(mxOp);
 	mfWindowMax::typeFunctor functor(windowLength,mxOp.getPixelSize());
-	mfWindowMax Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),functor.getWindowRadius(),functor);
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	mfWindowMax Obj(iOp,endOp,iRet,functor.getWindowRadius(),functor);
 
 	_RUN(Obj)
 }
@@ -796,7 +874,10 @@ void windowTotal(DblRasterMx & mxOp, DblRasterMx & mxRet,double windowLength)
 {
 	mxRet.initlike(mxOp);
 	mfWindowTotal::typeFunctor functor(windowLength,mxOp.getPixelSize());
-	mfWindowTotal Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),functor.getWindowRadius(),functor);
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	mfWindowTotal Obj(iOp,endOp,iRet,functor.getWindowRadius(),functor);
 
 	_RUN(Obj)
 }
@@ -805,7 +886,10 @@ void windowVariance(DblRasterMx & mxOp, DblRasterMx & mxRet,double windowLength)
 {
 	mxRet.initlike(mxOp);
 	mfWindowVariance::typeFunctor functor(windowLength,mxOp.getPixelSize());
-	mfWindowVariance Obj(mxOp.begin(),mxOp.end(),mxRet.begin(),functor.getWindowRadius(),functor);
+	DblRasterMx::iterator iOp = mxOp.begin(), endOp = mxOp.end();
+	DblRasterMx::iterator iRet = mxRet.begin();
+
+	mfWindowVariance Obj(iOp, endOp ,iRet, functor.getWindowRadius(),functor);
 
 	_RUN(Obj)
 }
@@ -890,8 +974,8 @@ void diagonal(RasterPositionMatrix & mxPos,DblRasterMx & mxRet)
 	RasterPositionMatrix::iterator iPos = mxPos.begin();
 	RasterPositionMatrix::iterator endPos = mxPos.end();
 	DblRasterMx::iterator iRet = mxRet.begin();
-
-	mfDiagonalPosition Obj(iPos, endPos, iRet,mfDiagonalPosition::typeFunctor());
+	mfDiagonalPosition::typeFunctor functor;
+	mfDiagonalPosition Obj(iPos, endPos, iRet, functor);
 	_RUN(Obj)
 }
 

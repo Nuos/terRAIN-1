@@ -1549,4 +1549,114 @@ void shift_left(DblRasterMx & mx)
 	}
 }
 
+void distanceTransform(const DblRasterMx & mx, DblRasterMx & distances, RasterPositionMatrix & positions)
+{
+	distances.initlike(mx);
+	positions.initlike(mx);
+	distances.fill(DoubleUtil::getMAXValue());
+
+	IntRasterMx finalizedPoints;
+	finalizedPoints.initlike(mx);
+	int initValue = 0;
+	finalizedPoints.fill(initValue);
+
+	typedef std::vector<RasterPosition> PositionsVector;
+
+	PositionsVector front;
+
+	size_t rows = mx.getRowNr(), cols = mx.getColNr();
+
+	for(size_t row = 0; row < rows; ++row) {
+		for (size_t col = 0; col < cols; ++col) {
+			if (mx(row, col) > 0.0) {
+				finalizedPoints(row, col) = 1;
+				distances(row, col) = 0.0;
+				RasterPosition pos(row, col);
+				front.push_back(pos);
+				positions(row, col) = pos;
+			}
+		}
+	}
+
+	PositionsVector front2;
+
+	PositionsVector * currentFront = &front;
+	PositionsVector * nextFront = &front2;
+
+	while (currentFront->size() > 0) {
+		nextFront->clear();
+		PositionsVector::iterator it = currentFront->begin(), end = currentFront->end();
+		for (; it!= end; ++it) {
+			RasterPosition & pos = *it;
+			IntRasterMx::iterator iFinalizedPos = finalizedPoints.getIteratorAt(pos.getRow(), pos.getCol());
+			DblRasterMx::iterator iDistance = distances.getIteratorAt(pos.getRow(), pos.getCol());
+			for (unsigned cc = 1; cc <= 9; ++cc) {
+				if (cc==5 || !iFinalizedPos.isValidItemByChainCode(cc)) {
+					continue;
+				}
+
+				int isFinalized = iFinalizedPos.chain_code(cc);
+				if (isFinalized!=0)
+					continue;
+
+				double d = mx.getPixelSize();
+				if (cc==1 || cc==3 || cc==7 || cc==9) {
+					d*=SQRT2;
+				}
+
+				double dist = *iDistance + d;
+				double cc_dist = iDistance.chain_code(cc);
+				if ( dist < cc_dist) {
+					iDistance.chain_code(cc) = dist;
+					DblRasterMx::iterator::dCoords delta = iDistance.getChainCodeDelta(cc);
+					RasterPosition cc_pos(pos.getRow() + delta._nDRow, pos.getCol() + delta._nDCol);
+					nextFront->push_back(cc_pos);
+					positions(cc_pos.getRow(), cc_pos.getCol()) = positions(pos.getRow(), pos.getCol());
+				}
+				
+				
+			}
+		}
+
+		it = nextFront->begin(), end = nextFront->end();
+		currentFront->clear();
+		for (; it!= end; ++it) {
+			RasterPosition & pos = *it;
+			size_t row = pos.getRow();
+			size_t col = pos.getCol();
+
+			if ( finalizedPoints(row, col) == 0 ) {
+				finalizedPoints(row, col) = 1;
+				currentFront->push_back(pos);
+			}
+		}
+	}
+}
+
+
+void create_sample_terrain(const DblRasterMx & fixed_heights, bool valleys, double mul, DblRasterMx & sample_terrain)
+{
+	sample_terrain.initlike(fixed_heights);
+	
+	DblRasterMx distances; 
+	RasterPositionMatrix positions;
+
+	distanceTransform(fixed_heights, distances, positions);
+
+	if (!valleys)
+		mul *=-1.0;
+
+	size_t rows = fixed_heights.getRowNr();
+	size_t cols = fixed_heights.getColNr();
+
+	for (size_t i = 0; i < rows; ++i) {
+		for (size_t j = 0; j < cols; ++j)  {
+			RasterPosition pos = positions(i,j);
+			double base = fixed_heights(pos.getRow(), pos.getCol());
+			double val = base + mul * distances(i,j);
+			sample_terrain(i,j) = val;
+		}
+	}
+}
+
 }

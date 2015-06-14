@@ -18,6 +18,7 @@ protected:
 	size_t _nRow;
 	size_t _nCol;
 
+public:
 	struct dCoords
 	{
 		int _nDRow;
@@ -74,7 +75,7 @@ protected:
 		return delta;
 	}
 
-public:
+
 
 	WindowIterator(): _pOwner(NULL), _pData(NULL), _nRow(0), _nCol(0) {}
 	WindowIterator(T * pOwner, typeData * pData, size_t nRow, size_t nCol): _pOwner(pOwner), _pData(pData), _nRow(nRow), _nCol(nCol) {}

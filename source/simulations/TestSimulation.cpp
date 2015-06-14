@@ -27,6 +27,25 @@ TestSimulation::TestSimulation(ostream & os, ParamHandler & params):
 
 bool TestSimulation::run()
 {
+
+	setOutputDirectory("c:\\terrain_output");
+	size_t size = 10;
+	DblRasterMx mx(size, size, 10.0, origoBottomLeft, 0.0);
+	for (size_t i = 0; i < size; ++i)
+		mx(i,i) = (i+1) * 10.0;
+
+	DblRasterMx distances;
+	RasterPositionMatrix positions;
+	distanceTransform(mx, distances, positions);
+
+	printmx(distances);
+	saveToAsc(positions,0,"positions");
+
+	DblRasterMx valley;
+	create_sample_terrain(mx, true, 1.0, valley);
+	saveToAsc(valley,0,"valley");
+
+	/*
 	setOutflowType(ofAllSides);
 
 	DblRasterMx mx;
@@ -59,7 +78,7 @@ bool TestSimulation::run()
 	longestflowpathlength(mxMLDD, mxLongestflowpathlength);
     printmx(mxRet);
 	printmx(mxRetMax);
-
+	*/
 	/*
 	::saveToAsc(mx,0,"a");
 	::saveToAsc(mx,0,"b",true);

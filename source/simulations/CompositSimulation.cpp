@@ -131,25 +131,27 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stPixelPixelTransport;
 
-	double rainTime = 1000;
+	double rainTime = 3;
+	double logTimeInc = 1;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.0001;
+	double min_iteration_time = 0.001;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
 	erosionRateParams.infinite_erosion_rate = 1;
 	erosionRateParams.diffusion_exponent = 2.0;
-	erosionRateParams.diffusive_const =  0.01; //0.0001;	
-	erosionRateParams.fluvial_const = 0.001; //0.001;
+	erosionRateParams.diffusive_const = 0; //0.01; //0.0001;	
+	erosionRateParams.fluvial_const = 0;//0.001; //0.001;
 	erosionRateParams.min_elevation_diff = 1e-7;
 	erosionRateParams.runoff_exponent = 1.5;
 	erosionRateParams.slope_exponent = 1.5;
 	erosionRateParams.simple_diffusion = true;
 
-	double kTect = 0.1;
-	double kTect2 = 0.0;
-	double kHor = 0.0;
-	double kTectSpread = 10.0;
+	double kTect = 0.0;
+	double kTectLeft = 0.1;
+	double kTectRight = 0.1;
+	double kHor = 0.1;
+	double kTectSpread = 0.0;
 
 	// common variables
 	size_t nSizeX = 20;
@@ -185,8 +187,11 @@ bool CompositSimulation::run()
 	DblRasterMx mxSedInFluvial;
 	DblRasterMx mxSedOutFluvial;
 	DblRasterMx Edges;
+	DblRasterMx EdgesRight;
+	DblRasterMx EdgesLeft;
 	DblRasterMx xCoord;
 	DblRasterMx yCoord;
+	DblRasterMx pits;
 
 	MultiflowDMatrix mxSMLDD;
 	MultiflowDMatrix terrainMLDD;
@@ -215,6 +220,8 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, streams);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, path1);
 	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
+	mapattr(nSizeY,nSizeX,pixelSize,0, EdgesRight);
+	mapattr(nSizeY,nSizeX,pixelSize,0, EdgesLeft);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, xCoord);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, yCoord);
 	
@@ -244,12 +251,12 @@ bool CompositSimulation::run()
 			DblRasterMx randomNoise;
 			DblRasterMx multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
-			mapattr(nSizeY,nSizeX,pixelSize,0.1, multiplicatorSmall);
+			mapattr(nSizeY,nSizeX,pixelSize,1, multiplicatorSmall);
 			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
 			uniform(randomNoise);
 			
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
-			saveToArcgis(randomNoise, 0, "randomNoise");
+			//saveToArcgis(randomNoise, 0, "randomNoise");
 
 			xcoordinate(rock, xCoord);
 			ycoordinate(rock, yCoord);
@@ -266,11 +273,14 @@ bool CompositSimulation::run()
 			   }*/
 			rock = rock + randomNoise * multiplicatorSmall;
 			
-			/*if (!loadFromArcgis("d:\\terrain_output2\\mx1000102.asc",rock)) {
+			if (!loadFromArcgis("d:\\terrain_output2\\mx1000026.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
-			}*/
-			saveToArcgis(rock, 0, "base");
+			}
+
+			findpits(rock, pits);
+			saveToArcgis(pits, 0, "pits");
+
 			IntRasterMx terrain_pixel_types;
 			find_special_points(rock, channel, terrain_pixel_types);
 			saveToArcgis(terrain_pixel_types, 0, "special_points_slope");
@@ -300,7 +310,7 @@ bool CompositSimulation::run()
 
 	size_t iteration_nr = 0;
 	double waterOnPits = 0.0;
-	double logTimeInc = 1;
+	//double logTimeInc = 10;
 	double nextLogTime = 0.0;
 	int log_index = 1;
 
@@ -312,6 +322,10 @@ bool CompositSimulation::run()
 	double nextUpliftTime = UpliftTimeInc;
 	size_t nextUpliftCol = 0;
 	
+	StatFile statFile("statfile.txt",15);
+	statFile.print("elapsed time");
+	statFile.print("iteration time");
+	statFile.endl();
 
 	while (stopCondition) 
 	{
@@ -389,7 +403,7 @@ bool CompositSimulation::run()
 				case rfCatchmentBasedEstimation:
 				{
 					MultiflowDMatrix  terrainMLDD;
-					multiflowLDD( 9, terrain, terrainMLDD, false);
+					multiflowLDD( 1	, terrain, terrainMLDD, true);
 					DblRasterMx mxAccflux;
 					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
 					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);
@@ -424,8 +438,6 @@ bool CompositSimulation::run()
 			MultiflowDMatrix mxSedimentMovementFluvial;
 			compute_sediment_flux(erosion_rates.mxFluvialErosionRate, iteration_time, mxSedimentMovementFluvial); 
 
-			DblRasterMx mxSedInFluvial;
-			DblRasterMx mxSedOutFluvial;
 			compute_material_movement(mxSedimentMovementFluvial,mxSedInFluvial, mxSedOutFluvial);
 
 			rock = rock - mxSedOutFluvial;
@@ -438,8 +450,6 @@ bool CompositSimulation::run()
 			MultiflowDMatrix mxSedimentMovementDiffusive;
 			compute_sediment_flux(erosion_rates.mxDiffusiveErosionRate, iteration_time, mxSedimentMovementDiffusive); 
 
-			DblRasterMx mxSedInDiffusive;
-			DblRasterMx mxSedOutDiffusive;
 			compute_material_movement(mxSedimentMovementDiffusive,mxSedInDiffusive, mxSedOutDiffusive);
 
 			rock = rock + mxSedInDiffusive - mxSedOutDiffusive;
@@ -457,8 +467,10 @@ bool CompositSimulation::run()
 
 			DblRasterMx kTectIteration;
 			mapattr(nSizeY,nSizeX,pixelSize,kTect*iteration_time, kTectIteration);
-			DblRasterMx kTectIteration2;
-			mapattr(nSizeY,nSizeX,pixelSize,kTect2*iteration_time, kTectIteration2);
+			DblRasterMx kTectIterationLeft;
+			mapattr(nSizeY,nSizeX,pixelSize,kTectLeft*iteration_time, kTectIterationLeft);
+			DblRasterMx kTectIterationRight;
+			mapattr(nSizeY,nSizeX,pixelSize,kTectRight*iteration_time, kTectIterationRight);
 			elapsedTime+=iteration_time;
 			std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
 			
@@ -484,12 +496,14 @@ bool CompositSimulation::run()
 			}
 			
 			// lower Edges
-			Edges = Edges-kTectIteration2;
+			EdgesLeft = EdgesLeft-kTectIterationLeft;
+			EdgesRight = EdgesRight-kTectIterationRight;
+
 			    size_t j = 0;
 				size_t l = 0;
 			   for ( j = 0; j < nSizeY; j++ ){				 
-                   rock(j,0) = Edges(j,0);   
-				   rock(j,nSizeX-1) = Edges(j,nSizeX-1);
+                   rock(j,0) = EdgesLeft(j,0);   
+				   rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
 					   /*for ( l = 0; l < nSizeY; l++ ){
 						   if (l < 3){
 							   rock(j,l) = rock(j,l) - kTectIteration(j,l);
@@ -509,11 +523,13 @@ bool CompositSimulation::run()
 			redo_iteration = false;
 		}
 
-		
+		statFile.print(elapsedTime);
+		statFile.print(iteration_time);
+		statFile.endl();
 		if (elapsedTime > nextLogTime){
-					saveToArcgis(terrain, log_index, "terrain");
+					//saveToArcgis(terrain, log_index, "terrain");
 					nextLogTime+=logTimeInc;
-					++log_index;
+					
 			   mx1=terrain;
 			   slope(mx1,mxSlope); 
 			   max(mxSlope,zeroPlusABit, mxSlopeCorrected);			  
@@ -567,11 +583,8 @@ bool CompositSimulation::run()
 			   }*/
 			   int j = 0;
 			   int l = 0;
-			   for ( j = 0; j < nSizeX; j++ ){
-						for ( l = 0; l < nSizeY; l++ ){
-							streams(l,j) = 0;
-							}
-			   }
+			   streams.fill(0.0);
+			   
 			   for ( j = 0; j < nSizeX; j++ ){
 						for ( l = 0; l < nSizeY; l++ ){									
 							if ( mxDownstreamRatio(l,j) > 0.9 ){		
@@ -581,18 +594,22 @@ bool CompositSimulation::run()
 			   }			  
 			   
 			   path (mxSMLDD, streams, path1);
+			   /*
 			   for ( j = 0; j < nSizeX; j++ ){			// because of the unincluded first pixel
 						for ( l = 0; l < nSizeY; l++ ){			
 							if (path1(l,j) == 1 || streams(l,j) == 1){
 								path1(l,j) = 1;                 
 							}
 						}
-			   }
+			   }*/
+			   
 			   for ( j = 0; j < nSizeX; j++ ){			
 						for ( l = 0; l < nSizeY; l++ ){			
 							path1sum = path1(l,j) + path1sum;							
 						}
 			   }
+			   
+			   findpits(terrain, pits); 
 			
 
 			   //saveToArcgis(mx1,log_index,"mx2");			   
@@ -681,19 +698,19 @@ bool CompositSimulation::run()
 					//saveToArcgis(terrain_pixel_types, log_index, "special_points_slope");
 					//saveToArcgis(mxDownstreamRatio, log_index, "mxDownstreamRatio");
 					//saveToArcgis(mxDownstreamMax, log_index, "mxDownstreamMax");
-					//saveToArcgis(path1, log_index, "path1");
-					//saveToArcgis(streams, log_index, "streams");
-					//saveToArcgis(mxSedOutDiffusive, log_index, "mxSedOutDiffusive");
-					//saveToArcgis(mxSedOutFluvial, log_index, "mxSedOutFluvial");
-					
-
+					saveToArcgis(path1, log_index, "path1");
+					saveToArcgis(streams, log_index, "streams");
+					saveToArcgis(pits,log_index,"pits");
+					saveToArcgis(mxSedOutDiffusive, log_index, "mxSedOutDiffusive");
+					saveToArcgis(mxSedOutFluvial, log_index, "mxSedOutFluvial");
+					++log_index;
 		}
 		iteration_nr++;
 	}
 
 	printmx(terrain);
 	
-saveToArcgis(terrain, iteration_nr, "terrain");
+//saveToArcgis(terrain, iteration_nr, "terrain");
  
 	return true;
 }

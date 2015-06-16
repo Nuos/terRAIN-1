@@ -117,7 +117,7 @@ bool symm(MultiflowDMatrix & mx)
 */
 bool CompositSimulation::run()
 {
-	setOutputDirectory("d:\\terrain_output2");
+	setOutputDirectory("d:\\terrain_output");
 	// simulation settings
 	//setOutflowType(ofAllSides);
 	//setOutflowType(ofTopAndBottomSide);
@@ -131,17 +131,17 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stPixelPixelTransport;
 
-	double rainTime = 3;
+	double rainTime = 50;
 	double logTimeInc = 1;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.001;
+	double min_iteration_time = 0.00001;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
 	erosionRateParams.infinite_erosion_rate = 1;
 	erosionRateParams.diffusion_exponent = 2.0;
-	erosionRateParams.diffusive_const = 0; //0.01; //0.0001;	
-	erosionRateParams.fluvial_const = 0;//0.001; //0.001;
+	erosionRateParams.diffusive_const = 0.0; //0.0001;	
+	erosionRateParams.fluvial_const = 0.001; //0.001;
 	erosionRateParams.min_elevation_diff = 1e-7;
 	erosionRateParams.runoff_exponent = 1.5;
 	erosionRateParams.slope_exponent = 1.5;
@@ -150,8 +150,8 @@ bool CompositSimulation::run()
 	double kTect = 0.0;
 	double kTectLeft = 0.1;
 	double kTectRight = 0.1;
-	double kHor = 0.1;
-	double kTectSpread = 0.0;
+	double kHor = 0.0;
+	double kTectSpread = 10.0;
 
 	// common variables
 	size_t nSizeX = 20;
@@ -220,8 +220,8 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, streams);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, path1);
 	mapattr(nSizeY,nSizeX,pixelSize,100, Edges);
-	mapattr(nSizeY,nSizeX,pixelSize,0, EdgesRight);
-	mapattr(nSizeY,nSizeX,pixelSize,0, EdgesLeft);
+	mapattr(nSizeY,nSizeX,pixelSize,100, EdgesRight);
+	mapattr(nSizeY,nSizeX,pixelSize,100, EdgesLeft);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, xCoord);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, yCoord);
 	
@@ -273,13 +273,13 @@ bool CompositSimulation::run()
 			   }*/
 			rock = rock + randomNoise * multiplicatorSmall;
 			
-			if (!loadFromArcgis("d:\\terrain_output2\\mx1000026.asc",rock)) {
+			/*if (!loadFromArcgis("d:\\terrain_output2\\mx1000028.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
-			}
+			}*/
 
-			findpits(rock, pits);
-			saveToArcgis(pits, 0, "pits");
+			//findpits(rock, pits);
+			//saveToArcgis(pits, 0, "pits");
 
 			IntRasterMx terrain_pixel_types;
 			find_special_points(rock, channel, terrain_pixel_types);
@@ -317,6 +317,8 @@ bool CompositSimulation::run()
 	
 	double shiftTimeInc = kHor > 0 ? pixelSize/kHor : DoubleUtil::getMAXValue();
 	double nextShiftTime = shiftTimeInc;
+	double shiftTimeInc2 = kTectSpread > 0 ? pixelSize/kTectSpread : DoubleUtil::getMAXValue();
+	double nextShiftTime2 = shiftTimeInc2;
 
 	double UpliftTimeInc = kTectSpread > 0 ? pixelSize/kTectSpread : DoubleUtil::getMAXValue();
 	double nextUpliftTime = UpliftTimeInc;
@@ -403,7 +405,7 @@ bool CompositSimulation::run()
 				case rfCatchmentBasedEstimation:
 				{
 					MultiflowDMatrix  terrainMLDD;
-					multiflowLDD( 1	, terrain, terrainMLDD, true);
+					multiflowLDD( 1	, terrain, terrainMLDD, false);
 					DblRasterMx mxAccflux;
 					accflux(terrainMLDD,mxFluid,mxAccflux,0.0);
 					compute_flux_distribution(terrainMLDD, mxAccflux, runoff_distribution);
@@ -475,7 +477,7 @@ bool CompositSimulation::run()
 			std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 
 			
 			// spatially variing uplift
-			if (elapsedTime > nextUpliftTime) {
+			/*if (elapsedTime > nextUpliftTime) {
 				if (nextUpliftCol < nSizeX) {			
 					++nextUpliftCol;
 				}
@@ -486,7 +488,7 @@ bool CompositSimulation::run()
 				for (size_t row = 0; row < nSizeY; ++row) {
 					rock(row, col)+=upliftVal;
 				}
-			}
+			}*/
 		
 			// horizontal advection
 			if (elapsedTime >= nextShiftTime) {
@@ -501,20 +503,26 @@ bool CompositSimulation::run()
 
 			    size_t j = 0;
 				size_t l = 0;
+				size_t EdgesLimit = 1;
 			   for ( j = 0; j < nSizeY; j++ ){				 
                    rock(j,0) = EdgesLeft(j,0);   
-				   rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
-					   /*for ( l = 0; l < nSizeY; l++ ){
-						   if (l < 3){
-							   rock(j,l) = rock(j,l) - kTectIteration(j,l);
+				   //rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
+					   for ( l = 0; l < nSizeY; l++ ){
+						   if (l > EdgesLimit){
+							   rock(j,l) = EdgesRight(j,l);
 						   }
-					   }*/
+					   }
 			   }
 							               
 			  /*  for ( j = 1; j < nSizeX-1; j++ ){
                        rock(nSizeY-1,j) = Edges(nSizeY-1,j);
 					   rock(0,j) = Edges(0,j);
 			   }*/
+			if (elapsedTime >= nextShiftTime2) {
+				nextShiftTime2+=shiftTimeInc2;
+				EdgesLimit+=EdgesLimit;
+			}
+			
 
 			terrain = rock + soil;
 			mxFlowDepth = copyOfFlowDepth;
@@ -691,18 +699,18 @@ bool CompositSimulation::run()
 					//saveToAsc(mxShortest, i, "mxShortest",true);
 					//saveToAsc(sumdAdL, i, "sumdAdL",true);
 					//saveToAsc(sumdSdL, i, "sumdSdL",true);
-					saveToArcgis(elongation, log_index, "elongation");
+					//saveToArcgis(elongation, log_index, "elongation");
 					//saveToAsc(incision, i, "incision",true);
 					//saveToAsc(fpsumdAdL, i, "fpsumdAdL",true);
 					//saveToAsc(fp2sumdAdL, i, "fp2sumdAdL",true);
 					//saveToArcgis(terrain_pixel_types, log_index, "special_points_slope");
 					//saveToArcgis(mxDownstreamRatio, log_index, "mxDownstreamRatio");
 					//saveToArcgis(mxDownstreamMax, log_index, "mxDownstreamMax");
-					saveToArcgis(path1, log_index, "path1");
-					saveToArcgis(streams, log_index, "streams");
-					saveToArcgis(pits,log_index,"pits");
-					saveToArcgis(mxSedOutDiffusive, log_index, "mxSedOutDiffusive");
-					saveToArcgis(mxSedOutFluvial, log_index, "mxSedOutFluvial");
+					//saveToArcgis(path1, log_index, "path1");
+					//saveToArcgis(streams, log_index, "streams");
+					//saveToArcgis(pits,log_index,"pits");
+					//saveToArcgis(mxSedOutDiffusive, log_index, "mxSedOutDiffusive");
+					//saveToArcgis(mxSedOutFluvial, log_index, "mxSedOutFluvial");
 					++log_index;
 		}
 		iteration_nr++;

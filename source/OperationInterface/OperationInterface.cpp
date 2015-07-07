@@ -901,10 +901,11 @@ void path( MultiflowDMatrix & mxLDD, DblRasterMx & mx, DblRasterMx & mxRet)
 	if (mxLDD.getColNr()!=mx.getColNr() || mxLDD.getRowNr()!=mx.getRowNr())
 		return; // this should throw an exception
 	
-	mxRet.initlike(mx);
+	//mxRet.initlike(mx);
+	mxRet = mx; 
 	
-	double initVal = 0.0;
-	mxRet.fill(initVal);
+	//double initVal = 0.0;
+	//mxRet.fill(initVal);
 
 	MarkTouchedRasters markFunc(mxRet, 1.0);
 

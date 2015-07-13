@@ -2,7 +2,9 @@
 #define CHANNELHEAD_H
 
 #include "RasterPosition.h"
+#include "rastermatrix.h"
 #include <vector>
+#include <map>
 
 namespace TR
 {
@@ -37,6 +39,21 @@ public:
 	void erease(double ereaseTime);
 
 	void moveTo(RasterPosition pos, double time);
+};
+
+typedef std::map<int, ChannelHead> ChannelHeadMap; 
+
+class ChannelHeadTracker
+{
+private:
+	size_t _sizeX;
+	size_t _sizeY;
+	int _lasdID;
+	ChannelHeadMap _channelHeadMap;
+	IntRasterMx _channelHeads;
+public:
+
+
 };
 
 }

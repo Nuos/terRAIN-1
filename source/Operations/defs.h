@@ -28,7 +28,9 @@ enum eOutflowType
 	ofAllSides,
 	ofTopAndBottomSide,
 	ofLeftAndRightSide,
-	ofTopAndMiddleOfBottom
+	ofTopAndMiddleOfBottom,
+	ofRightSideAndTopLeft,
+	ofRightSideAndLeftMiddle
 };
 
 

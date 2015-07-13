@@ -399,11 +399,20 @@ public:
 				case ofLeftAndRightSide:
 					if ( _nCol==0 || _nCol==nMxColNr-1 )
 						return true;
+				break;
 				case ofTopAndMiddleOfBottom:
 					if ( _nRow == 0 || 
 						 (_nRow==nMxRowNr-1 && _nCol==(nMxColNr/2)))
 						return true;
-
+				case ofRightSideAndTopLeft:
+					if ( _nCol == nMxColNr-1 || 
+						 (_nRow==0 && _nCol==0))
+						return true;
+				break;
+				case ofRightSideAndLeftMiddle:
+					if ( _nCol == nMxColNr-1 || 
+						 (_nRow==(nMxRowNr/2) && _nCol==0))
+						return true;
 				break;
 			}
 		

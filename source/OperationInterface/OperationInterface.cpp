@@ -1392,8 +1392,6 @@ void compute_runoff_distribution( MultiflowDMatrix & mxVelocity, DblRasterMx & f
 erosion_rate_params::erosion_rate_params() :
 	runoff_exponent(1.0),
 	slope_exponent(1.0), 
-	fluvial_const(1.0),
-	diffusive_const(1.0), 
 	min_elevation_diff(1e-7),
 	critical_slope(1.0),
 	diffusion_exponent(2.0),
@@ -1415,22 +1413,26 @@ double compute_erosion_rate(const erosion_rate_params & params, DblRasterMx & te
 	MultiflowDMatrix::iterator iDiffusive = res.mxDiffusiveErosionRate.begin();
 	MultiflowDMatrix::iterator iFluvial = res.mxFluvialErosionRate.begin();
 	DblRasterMx::iterator iTerrain = terrain.begin();
+	DblRasterMx::iterator iFluvialConstant = params.fluvial_const.begin();
+	DblRasterMx::iterator iDiffusiveConstant = params.diffusive_const.begin();
 
 	double max_time_interval = DoubleUtil::getMAXValue();
 
 	double slope_threshold = params.critical_slope * 0.95;
-	for (; iRunoff != endRunoff; ++iRunoff, ++iSlope, ++iDiffusive,++iFluvial, ++iTerrain) {
+	for (; iRunoff != endRunoff; ++iRunoff, ++iSlope, ++iDiffusive,++iFluvial, ++iTerrain, ++iFluvialConstant, ++iDiffusiveConstant) {
 		double current_terrain_value = *iTerrain;
 		double erosion_rate_sum = 0.0;
+		double fluvial_const = *iFluvialConstant;
+		double diffusive_const = *iDiffusiveConstant;
 		for (int i = 0; i < 8; ++i) {
 			double runoff = (*iRunoff)(i);
 			double slope = (*iSlope)(i);
-			double fluvial_erosion_rate = ::pow(runoff, params.runoff_exponent) * ::pow(slope, params.slope_exponent) * params.fluvial_const;
+			double fluvial_erosion_rate = ::pow(runoff, params.runoff_exponent) * ::pow(slope, params.slope_exponent) * fluvial_const;
 			double diffusive_erosion_rate = 0.0;
 			if (slope >= slope_threshold) {
 				slope = slope_threshold;		
 			}
-			diffusive_erosion_rate = params.diffusive_const*slope;
+			diffusive_erosion_rate = diffusive_const*slope;
 			if (!params.simple_diffusion) {
 				diffusive_erosion_rate/=(1.0 - pow(slope/params.critical_slope, params.diffusion_exponent));
 			}

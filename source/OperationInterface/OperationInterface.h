@@ -107,8 +107,8 @@ struct erosion_rate_params
 {
 	double runoff_exponent;
 	double slope_exponent; 
-	double fluvial_const;
-	double diffusive_const; 
+	DblRasterMx fluvial_const;
+	DblRasterMx diffusive_const; 
 	double min_elevation_diff;
 	double critical_slope;
 	double diffusion_exponent;

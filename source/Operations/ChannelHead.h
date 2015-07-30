@@ -48,12 +48,15 @@ class ChannelHeadTracker
 private:
 	size_t _sizeX;
 	size_t _sizeY;
-	int _lasdID;
+	int _lastID;
 	ChannelHeadMap _channelHeadMap;
 	IntRasterMx _channelHeads;
 public:
-
-
+	ChannelHeadTracker(size_t sizeX, size_t sizeY);
+	int lastID() const;
+	const ChannelHeadMap & channelHeadMap() const;
+	const IntRasterMx & channelHeads() const;
+	bool track(const DblRasterMx & currentChannelHeads, double time);
 };
 
 }

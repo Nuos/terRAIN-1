@@ -83,6 +83,7 @@
     <ClCompile Include="..\..\..\source\Operations\accfluxFuncT.cpp" />
     <ClCompile Include="..\..\..\source\Operations\accfluxfunctions.cpp" />
     <ClCompile Include="..\..\..\source\Operations\BinaryMatrixFunc.cpp" />
+    <ClCompile Include="..\..\..\source\Operations\ChannelHead.cpp" />
     <ClCompile Include="..\..\..\source\Operations\CollectTouchedRasters.cpp" />
     <ClCompile Include="..\..\..\source\Operations\Coordinates.cpp" />
     <ClCompile Include="..\..\..\source\Operations\DoubleUtil.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="..\..\..\source\Operations\BinaryWindowFunc.h" />
     <ClInclude Include="..\..\..\source\Operations\BinaryWindowFuncT.h" />
     <ClInclude Include="..\..\..\source\Operations\ChainCodeData.h" />
+    <ClInclude Include="..\..\..\source\Operations\ChannelHead.h" />
     <ClInclude Include="..\..\..\source\Operations\CollectTouchedRasters.h" />
     <ClInclude Include="..\..\..\source\Operations\ConstantMarkFunction.h" />
     <ClInclude Include="..\..\..\source\Operations\Coordinates.h" />

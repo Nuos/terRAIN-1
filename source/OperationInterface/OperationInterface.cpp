@@ -29,6 +29,7 @@ using namespace VISUALIZATION;
 #include "SpreadLDD.h"
 #include "SpreadLDDMax.h"
 #include <map>
+#include "utils.h"
 
 
 namespace TR
@@ -1657,6 +1658,46 @@ void create_sample_terrain(const DblRasterMx & fixed_heights, bool valleys, doub
 			double base = fixed_heights(pos.getRow(), pos.getCol());
 			double val = base + mul * distances(i,j);
 			sample_terrain(i,j) = val;
+		}
+	}
+}
+
+void findChannelHeads(MultiflowDMatrix & mxLDD, DblRasterMx & channels, DblRasterMx & res)
+{
+	res.initlike(channels);
+	res.fill(0.0);
+
+	DblRasterMx::iterator iChannel = channels.begin(), end = channels.end();
+	MultiflowDMatrix::iterator iLDD = mxLDD.begin();
+	DblRasterMx::iterator iRes = res.begin();
+
+	for (; iChannel != end; ++iChannel, ++iLDD, ++iRes) {
+		if (fabs(*iChannel - 1.0) < 1e-6) {
+			bool isChannelHead = true;
+			for ( unsigned char cc = 1; cc < 10; ++cc) {
+				if (cc == 5)
+					continue;
+				if (!iChannel.isValidItemByChainCode(cc))
+					continue;
+				double neighbourValue = iChannel.chain_code(cc);
+				if ( fabs(neighbourValue - 1.0) > 1e-6)
+					continue;
+
+				MultiflowDMatrix::iterator iNeighbourLdd;
+				if (!iLDD.neighbourIterator(cc, iNeighbourLdd))
+					continue;
+
+				unsigned char myCC = TR::myChainCode(cc);
+				double ldd = iLDD->getByChainCode(myCC);
+
+				if ( ldd > 0.0) {
+					isChannelHead = false;
+					break;
+				}
+			}
+			if (isChannelHead) {
+				*iRes = 1.0;
+			}
 		}
 	}
 }

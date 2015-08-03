@@ -31,8 +31,11 @@ bool TestSimulation::run()
 	setOutputDirectory("c:\\terrain_output");
 	size_t size = 10;
 	DblRasterMx mx(size, size, 10.0, origoBottomLeft, 0.0);
-	for (size_t i = 0; i < size; ++i)
+	DblRasterMx channel(size, size, 10.0, origoBottomLeft, 0.0);
+	for (size_t i = 0; i < size; ++i) {
 		mx(i,i) = (i+1) * 10.0;
+		channel(i,i) = 1.0;
+	}
 
 	DblRasterMx distances;
 	RasterPositionMatrix positions;
@@ -44,6 +47,14 @@ bool TestSimulation::run()
 	DblRasterMx valley;
 	create_sample_terrain(mx, true, 1.0, valley);
 	saveToAsc(valley,0,"valley");
+
+	MultiflowDMatrix mLDD;
+	TR::semiMultiflowLDD(valley, mLDD, false);
+
+	DblRasterMx channelHeads;
+	findChannelHeads(mLDD, channel, channelHeads); 
+
+	::saveToAsc(channelHeads,0,"channelHeads");
 
 	/*
 	setOutflowType(ofAllSides);

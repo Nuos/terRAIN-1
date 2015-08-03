@@ -239,6 +239,8 @@ bool loadFromArcgis(const char * lpszFileName, DblRasterMx & mx);
 void distanceTransform(const DblRasterMx & mx, DblRasterMx & distances, RasterPositionMatrix & positions);
 void create_sample_terrain(const DblRasterMx & fixed_heights, bool valleys, double mul, DblRasterMx & sample_terrain);
 
+void findChannelHeads(MultiflowDMatrix & mxLDD, DblRasterMx & channels, DblRasterMx & res);
+
 }
 
 #endif

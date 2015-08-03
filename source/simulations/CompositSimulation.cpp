@@ -126,9 +126,9 @@ bool CompositSimulation::run()
 	//ofRightSideAndTopLeft
 	//ofRightSideAndLeftMiddle
 	
-	//setOutflowType(ofLeftAndRightSide);
+	setOutflowType(ofLeftAndRightSide);
 	//setOutflowType(ofRightSide);
-	setOutflowType(ofRightSideAndTopLeft);
+	//setOutflowType(ofRightSideAndTopLeft);
 	
 	SoilProductionType groundProductionType = gpNone;
 	
@@ -141,7 +141,7 @@ bool CompositSimulation::run()
 	double rainTime = 100;
 	double logTimeInc = 1;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.01;
+	double min_iteration_time = 0.001;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
@@ -251,8 +251,8 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxSedFluvialDifference);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxSedFluvialDifferenceRatio);
 	
-	mapattr(nSizeY,nSizeX,pixelSize,0.0, erosionRateParams.diffusive_const);
-	mapattr(nSizeY,nSizeX,pixelSize,0.001, erosionRateParams.fluvial_const);
+	mapattr(nSizeY,nSizeX,pixelSize, 1, erosionRateParams.diffusive_const);
+	mapattr(nSizeY,nSizeX,pixelSize,0.00, erosionRateParams.fluvial_const);
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
 	DblRasterMx mxFlowDepth;
@@ -279,7 +279,7 @@ bool CompositSimulation::run()
 			DblRasterMx randomNoise;
 			DblRasterMx multiplicatorSmall;
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, randomNoise);
-			mapattr(nSizeY,nSizeX,pixelSize,1, multiplicatorSmall);
+			mapattr(nSizeY,nSizeX,pixelSize,0.01, multiplicatorSmall);
 			mapattr(nSizeY,nSizeX,pixelSize,elevation, rock);
 			uniform(randomNoise);
 			
@@ -290,17 +290,17 @@ bool CompositSimulation::run()
 			ycoordinate(rock, yCoord);
 			int j = 0;
 			int l = 0;
-			for ( j = 0; j < nSizeX; j++ ){		
-						for ( l = 0; l < nSizeY; l++ ){			
-							if (j < 8){
-								//rock(l,j) = 100 + 2 - xCoord(l,j) * 0.01;   
-								//EdgesRight(l,j) = 100 + 0.04 - xCoord(l,j) * 0.0001;       
-							} else {
-								rock(l,j) = 90;
-								//rock(l,j) = 100 + 0.2 - xCoord(l,j) * 0.001;
-							}
-						}
-			   }
+			//for ( j = 0; j < nSizeX; j++ ){		
+			//			for ( l = 0; l < nSizeY; l++ ){			
+			//				if (j < 3){
+			//					rock(l,j) = 100; // - xCoord(l,j) * 0.02;   
+			//					//EdgesRight(l,j) = 100 + 0.04 - xCoord(l,j) * 0.0001;       
+			//				} else {
+			//					rock(l,j) = 96 - xCoord(l,j) * 0.001;
+			//					//rock(l,j) = 100 + 0.2 - xCoord(l,j) * 0.001;
+			//				}
+			//			}
+			//   }
 			rock = rock + randomNoise * multiplicatorSmall;
 			
 			/*if (!loadFromArcgis("e:\\Solyom\\run1\\mx1000101b.asc",rock)) {
@@ -483,6 +483,21 @@ bool CompositSimulation::run()
 					 }
 			 }
 
+			//for ( g = 0; g < nSizeY; g++ ){	
+			//		 for ( h = 0; h < nSizeX; h++ ){
+			//			 if (rock(g,h) < 99) {
+			//				 erosionRateParams.diffusive_const(g,h) = 0.01;
+			//				 erosionRateParams.fluvial_const(g,h) = 0.0;
+			//				 if (rock(g,h) < 98) {
+			//					 erosionRateParams.diffusive_const(g,h) = 0.0000001;
+			//					 erosionRateParams.fluvial_const(g,h) = 0.0;
+			//				 }
+			//			 } else {
+			//				 //erosionRateParams.diffusive_const(g,h) = 0.0;
+			//			 }
+			//		 }
+			// }
+
 			MultiflowDMatrix  mxMLLDSlope;
 			multiflowAngles(terrain, mxMLLDSlope, false);
 			erosion_rate_results erosion_rates;
@@ -607,15 +622,15 @@ bool CompositSimulation::run()
 				   //rock(j,nSizeX-1) = rock(j,nSizeX-1) - kTectMxIteration(j,nSizeX-1); 
 					   for ( l = 0; l < nSizeX; l++ ){
 						   //if (l < EdgesLimit){		
-							   if (l < 1){					
-							  rock(j,l) = rock(j,l) + kTectMxIteration(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
+							   if (l < 3){					
+							  //rock(j,l) = rock(j,l) + kTectMxIteration(j,l); // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
 						   } else {						     
-							  // //rock(j,l) = rock(j,l) - kTectMxIteration(j,l);    
+							  //rock(j,l) = rock(j,l) + kTectMxIteration(j,l); // * tst(j,l);    
 							  //rock(j,l) = EdgesRight(j,l);
 						   }
 					   }
-					   //rock(j,0) = EdgesLeft(j,0);   
-					   //rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
+					   rock(j,0) = EdgesLeft(j,0);   
+					   rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
 					   //bedloadRatio(l,EdgesLimit-1) = 0;
 					   //bedloadRatio(l,EdgesLimit-2) = 0;
 					   //bedloadRatio(l,EdgesLimit-3) = 0;

@@ -1688,7 +1688,7 @@ void findChannelHeads(MultiflowDMatrix & mxLDD, DblRasterMx & channels, DblRaste
 					continue;
 
 				unsigned char myCC = TR::myChainCode(cc);
-				double ldd = iLDD->getByChainCode(myCC);
+				double ldd = iNeighbourLdd->getByChainCode(myCC);
 
 				if ( ldd > 0.0) {
 					isChannelHead = false;

@@ -16,6 +16,7 @@ struct ChannelHeadHistoryRecord
 };
 
 typedef std::vector<ChannelHeadHistoryRecord> ChannelHeadHistory;
+typedef std::vector<RasterPosition> RasterPositionVector;
 
 class ChannelHead
 {
@@ -52,12 +53,17 @@ private:
 	int _lastID;
 	ChannelHeadMap _channelHeadMap;
 	IntRasterMx _channelHeads;
+	DblRasterMx  _prevChannels;
+
+	void copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target);
+	double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances);
+
 public:
 	ChannelHeadTracker(size_t sizeX, size_t sizeY);
 	int lastID() const;
 	const ChannelHeadMap & channelHeadMap() const;
 	const IntRasterMx & channelHeads() const;
-	bool track(const DblRasterMx & currentChannelHeads, double time);
+	bool track(const DblRasterMx & currentChannelHeads,  DblRasterMx & currentChannels, double time);
 };
 
 }

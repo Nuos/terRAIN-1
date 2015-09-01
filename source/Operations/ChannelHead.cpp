@@ -1,4 +1,5 @@
 #include "ChannelHead.h"
+#include "OperationInterface.h"
 
 namespace TR
 {
@@ -74,6 +75,7 @@ ChannelHeadTracker::ChannelHeadTracker(size_t sizeX, size_t sizeY) :
 {
 	int initVal = 0;
 	_channelHeads.init(_sizeY, _sizeX, 1.0, origoBottomLeft, initVal);
+	_prevChannels.init(_sizeY, _sizeX, 1.0, origoBottomLeft, initVal);
 }
 	
 int ChannelHeadTracker::lastID() const
@@ -91,7 +93,7 @@ const IntRasterMx & ChannelHeadTracker::channelHeads() const
 	return _channelHeads;
 }
 
-bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, double time)
+bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRasterMx & currentChannels, double time)
 {
 	DblRasterMx currentChannelHeadsCopy(currentChannelHeads);
 
@@ -115,34 +117,55 @@ bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, double t
 			}
 
 			// check if the channel head moved
-			int n = 0;
 			DblRasterMx::iterator::dCoords delta;
 			delta._nDCol = 0;
 			delta._nDRow = 0;
+			RasterPositionVector neighbourChannelHeadPositions(8);
 			for (unsigned char cc = 1; cc < 10; ++cc) {
 				if (cc==5 || !iCurrentChannelHead.isValidItemByChainCode(cc))
 					continue;
 				double val = iCurrentChannelHead.chain_code(cc);
 				if (val > 1e-6) {
-					++n;
 					delta = iCurrentChannelHead.getChainCodeDelta(cc);
-					currentChannelHeadsCopy(row + delta._nDRow, col + delta._nDCol) = 0.0;
+					RasterPosition pos(row + delta._nDRow, col + delta._nDCol);
+					neighbourChannelHeadPositions.push_back(pos);
 				}
 			}
 			
-			if (n==1) { // the channel head moved, and there is only one direction
-				*iChannelHeads = 0;
-				RasterPosition new_pos(row + delta._nDRow, col + delta._nDCol); 
-				_channelHeads(new_pos.getRow(), new_pos.getCol()) = id;
-				_channelHeadMap[id].moveTo(new_pos, time);
-			} else if (n==0) { // the channel head is ereased
+			size_t n = neighbourChannelHeadPositions.size();
+			RasterPosition new_pos;
+			if (n == 0) { // the channel head is ereased 
 				*iChannelHeads = 0;
 				_channelHeadMap[id].erease(time);
+				continue;
+			} else if (n == 1) { // the channel head moved, and there is only one direction	
+				new_pos = neighbourChannelHeadPositions.front();
 			} else if (n > 1) { // the channel head moved, but there are multiple directions
-				// not yet implemented
-				return false;
+				
+				DblRasterMx channelPixels;
+				copyChannelTo(_prevChannels, row, col, channelPixels); 
+				DblRasterMx distances; 
+				RasterPositionMatrix positions;
+				distanceTransform(channelPixels, distances, positions);
+				
+				double minDistance = DoubleUtil::getMAXValue();
+				int minDistanceIndex = 0;
+
+				for (int i = 0; i < n; ++i ) {
+					RasterPosition & pos = neighbourChannelHeadPositions[i];
+					double distance = channelDistance( currentChannels, pos.getRow(), pos.getCol(), distances);
+					if (distance < minDistance ) {
+						minDistance = distance;
+						minDistanceIndex = i;
+					}
+				}
+				new_pos = neighbourChannelHeadPositions[minDistanceIndex];
 			}
 
+			*iChannelHeads = 0;
+			_channelHeads(new_pos.getRow(), new_pos.getCol()) = id;
+		    _channelHeadMap[id].moveTo(new_pos, time);
+		    currentChannelHeadsCopy(new_pos.getRow(), new_pos.getCol()) = 0.0;
 		}
 	}
 	
@@ -157,7 +180,80 @@ bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, double t
 		}
 	}
 
+	_prevChannels = currentChannels;
+
 	return true;
+}
+
+void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target)
+{
+	double  initVal = 0;
+	target.initlike(channels);
+	target.fill(0.0);
+
+	size_t currentRow = channelHeadRow, currentCol = channelHeadCol;
+	size_t prevRow = 0, prevCol = 0;
+
+	double currentVal = channels(currentRow, currentCol);
+
+	while ( currentVal > 1e-6) {
+		target(	currentRow, currentCol ) = 1.0;
+		currentVal = 0.0;
+		DblRasterMx::iterator it = channels.getIteratorAt( currentRow, currentCol );
+		prevRow = currentRow;
+		prevCol = currentCol;
+		for (char cc = 1; cc < 10; ++cc) {
+			if (cc == 5 || !it.isValidItemByChainCode(cc))
+				continue;
+			double val = it.chain_code(cc);
+			if (val > 1e-6) {
+				DblRasterMx::iterator itNeighbour;
+				it.neighbourIterator(cc, itNeighbour);
+				if ( itNeighbour.getRow()!=prevRow ||  itNeighbour.getCol() != prevCol) {
+					currentRow = itNeighbour.getRow();
+					currentCol = itNeighbour.getCol();
+					currentVal = channels(currentRow, currentCol);
+					break;
+				}
+			}
+		}
+
+	}
+
+}
+
+double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances)
+{
+	double sum = 0.0;
+
+	size_t currentRow = channelHeadRow, currentCol = channelHeadCol;
+	size_t prevRow = 0, prevCol = 0;
+
+	double currentVal = channels(currentRow, currentCol);
+
+	while ( currentVal > 1e-6) {
+		sum += distances(currentRow, currentCol);  
+		currentVal = 0.0;
+		DblRasterMx::iterator it = channels.getIteratorAt( currentRow, currentCol );
+		prevRow = currentRow;
+		prevCol = currentCol;
+		for (char cc = 1; cc < 10; ++cc) {
+			if (cc == 5 || !it.isValidItemByChainCode(cc))
+				continue;
+			double val = it.chain_code(cc);
+			if (val > 1e-6) {
+				DblRasterMx::iterator itNeighbour;
+				it.neighbourIterator(cc, itNeighbour);
+				if ( itNeighbour.getRow()!=prevRow ||  itNeighbour.getCol() != prevCol) {
+					currentRow = itNeighbour.getRow();
+					currentCol = itNeighbour.getCol();
+					currentVal = channels(currentRow, currentCol);
+					break;
+				}
+			}
+		}
+
+	}
 }
 
 }

@@ -3,6 +3,9 @@
 namespace TR
 {
 
+ChannelHead::ChannelHead() :
+	_id(0), _generationTime(-2), _ereaseTime(-1.0), _lastMoveTime(-2)
+{}
 
 ChannelHead::ChannelHead(size_t id, RasterPosition pos, double generationTime) :
 	_id(id), _pos(pos), _generationTime(generationTime), _ereaseTime(-1.0), _lastMoveTime(generationTime)

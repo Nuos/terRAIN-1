@@ -27,6 +27,7 @@ private:
 	double _lastMoveTime;
 	ChannelHeadHistory _history;
 public:
+	ChannelHead();
 	ChannelHead(size_t id, RasterPosition pos, double generationTime);
 
 	size_t getID() const;

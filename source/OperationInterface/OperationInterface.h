@@ -215,7 +215,7 @@ void saveToArcgis(rastermatrix<T> & mx, size_t nIter, const char * lpszBaseName)
 
 	std::ofstream ofs(strArcgisFile.c_str());
 	size_t ncols = mx.getColNr();
-	size_t nrows = mx.getColNr();
+	size_t nrows = mx.getRowNr();
 	double pixelSize = mx.getPixelSize();
 	ofs << "ncols         " << ncols << std::endl;
 	ofs << "nrows         " << nrows << std::endl;

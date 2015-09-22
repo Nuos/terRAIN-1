@@ -61,9 +61,9 @@ private:
 public:
 	ChannelHeadTracker(size_t sizeX, size_t sizeY);
 	int lastID() const;
-	const ChannelHeadMap & channelHeadMap() const;
-	const IntRasterMx & channelHeads() const;
-	bool track(const DblRasterMx & currentChannelHeads,  DblRasterMx & currentChannels, double time);
+	ChannelHeadMap & channelHeadMap();
+	IntRasterMx & channelHeads() ;
+	int track(const DblRasterMx & currentChannelHeads,  DblRasterMx & currentChannels, double time);
 };
 
 }

@@ -83,24 +83,24 @@ int ChannelHeadTracker::lastID() const
 	return _lastID;
 }
 	
-const ChannelHeadMap & ChannelHeadTracker::channelHeadMap() const
+ChannelHeadMap & ChannelHeadTracker::channelHeadMap()
 {
 	return _channelHeadMap;
 }
 
-const IntRasterMx & ChannelHeadTracker::channelHeads() const
+IntRasterMx & ChannelHeadTracker::channelHeads()
 {
 	return _channelHeads;
 }
 
-bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRasterMx & currentChannels, double time)
+int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRasterMx & currentChannels, double time)
 {
 	DblRasterMx currentChannelHeadsCopy(currentChannelHeads);
 
 	//first try to track the current channel heads:
 	
 	IntRasterMx::iterator iChannelHeads = _channelHeads.begin(),  endChannelHeads = _channelHeads.end();
-
+	int nr_of_captures = 0;
 	for (; iChannelHeads != endChannelHeads; ++iChannelHeads) {
 		int id = *iChannelHeads;
 
@@ -120,7 +120,8 @@ bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaste
 			DblRasterMx::iterator::dCoords delta;
 			delta._nDCol = 0;
 			delta._nDRow = 0;
-			RasterPositionVector neighbourChannelHeadPositions(8);
+			RasterPositionVector neighbourChannelHeadPositions;
+			neighbourChannelHeadPositions.reserve(8);
 			for (unsigned char cc = 1; cc < 10; ++cc) {
 				if (cc==5 || !iCurrentChannelHead.isValidItemByChainCode(cc))
 					continue;
@@ -137,6 +138,10 @@ bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaste
 			if (n == 0) { // the channel head is ereased 
 				*iChannelHeads = 0;
 				_channelHeadMap[id].erease(time);
+
+				if (currentChannels(row, col) > 1e-6) {
+					++nr_of_captures;
+				}
 				continue;
 			} else if (n == 1) { // the channel head moved, and there is only one direction	
 				new_pos = neighbourChannelHeadPositions.front();
@@ -177,12 +182,14 @@ bool ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaste
 			RasterPosition pos(iCurrentChannelHead.getRow(), iCurrentChannelHead.getCol());
 			++_lastID;
 			_channelHeadMap[_lastID] = ChannelHead(_lastID, pos, time);
+			_channelHeads(pos.getRow(), pos.getCol()) = _lastID;
+
 		}
 	}
 
 	_prevChannels = currentChannels;
 
-	return true;
+	return nr_of_captures;
 }
 
 void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target)
@@ -192,7 +199,7 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 	target.fill(0.0);
 
 	size_t currentRow = channelHeadRow, currentCol = channelHeadCol;
-	size_t prevRow = 0, prevCol = 0;
+	size_t prevRow = channelHeadRow, prevCol = channelHeadCol;
 
 	double currentVal = channels(currentRow, currentCol);
 
@@ -200,9 +207,7 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 		target(	currentRow, currentCol ) = 1.0;
 		currentVal = 0.0;
 		DblRasterMx::iterator it = channels.getIteratorAt( currentRow, currentCol );
-		prevRow = currentRow;
-		prevCol = currentCol;
-		for (char cc = 1; cc < 10; ++cc) {
+		for (unsigned char cc = 1; cc < 10; ++cc) {
 			if (cc == 5 || !it.isValidItemByChainCode(cc))
 				continue;
 			double val = it.chain_code(cc);
@@ -210,10 +215,14 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 				DblRasterMx::iterator itNeighbour;
 				it.neighbourIterator(cc, itNeighbour);
 				if ( itNeighbour.getRow()!=prevRow ||  itNeighbour.getCol() != prevCol) {
+					prevRow = currentRow;
+					prevCol = currentCol;
 					currentRow = itNeighbour.getRow();
 					currentCol = itNeighbour.getCol();
-					currentVal = channels(currentRow, currentCol);
-					break;
+					if (target(	currentRow, currentCol ) < 1e-6) {
+						currentVal = 1.0;
+						break;
+					}
 				}
 			}
 		}
@@ -222,22 +231,26 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 
 }
 
-double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances)
+double ChannelHeadTracker::channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances)
 {
+	double  initVal = 0;
+    DblRasterMx visitedPixels; 
+	visitedPixels.initlike(channels);
+	visitedPixels.fill(0.0);
+	
 	double sum = 0.0;
-
+	
 	size_t currentRow = channelHeadRow, currentCol = channelHeadCol;
-	size_t prevRow = 0, prevCol = 0;
+	size_t prevRow = channelHeadRow, prevCol = channelHeadCol;
 
 	double currentVal = channels(currentRow, currentCol);
 
 	while ( currentVal > 1e-6) {
+		visitedPixels(currentRow, currentCol) = 1.0;
 		sum += distances(currentRow, currentCol);  
 		currentVal = 0.0;
 		DblRasterMx::iterator it = channels.getIteratorAt( currentRow, currentCol );
-		prevRow = currentRow;
-		prevCol = currentCol;
-		for (char cc = 1; cc < 10; ++cc) {
+		for (unsigned char cc = 1; cc < 10; ++cc) {
 			if (cc == 5 || !it.isValidItemByChainCode(cc))
 				continue;
 			double val = it.chain_code(cc);
@@ -245,15 +258,21 @@ double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t ch
 				DblRasterMx::iterator itNeighbour;
 				it.neighbourIterator(cc, itNeighbour);
 				if ( itNeighbour.getRow()!=prevRow ||  itNeighbour.getCol() != prevCol) {
+					prevRow = currentRow;
+					prevCol = currentCol;
 					currentRow = itNeighbour.getRow();
 					currentCol = itNeighbour.getCol();
-					currentVal = channels(currentRow, currentCol);
-					break;
+					if (visitedPixels(	currentRow, currentCol ) < 1e-6) {
+						currentVal = 1.0;
+						break;
+					}
+					
 				}
 			}
 		}
 
 	}
+	return sum;
 }
 
 }

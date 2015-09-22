@@ -1664,7 +1664,7 @@ void create_sample_terrain(const DblRasterMx & fixed_heights, bool valleys, doub
 
 void findChannelHeads(MultiflowDMatrix & mxLDD, DblRasterMx & channels, DblRasterMx & res)
 {
-	res.initlike(channels);
+	//res.initlike(channels);
 	res.fill(0.0);
 
 	DblRasterMx::iterator iChannel = channels.begin(), end = channels.end();

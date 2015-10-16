@@ -59,7 +59,7 @@ private:
 	double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances);
 
 public:
-	ChannelHeadTracker(size_t sizeX, size_t sizeY);
+	ChannelHeadTracker(size_t sizeX, size_t sizeY,double pixelSize);
 	int lastID() const;
 	ChannelHeadMap & channelHeadMap();
 	IntRasterMx & channelHeads() ;

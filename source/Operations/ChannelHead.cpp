@@ -70,12 +70,12 @@ void ChannelHead::erease(double ereaseTime)
 }
 
 
-ChannelHeadTracker::ChannelHeadTracker(size_t sizeX, size_t sizeY) : 
+ChannelHeadTracker::ChannelHeadTracker(size_t sizeX, size_t sizeY, double pixelSize) : 
 	_sizeX(sizeX), _sizeY(sizeY), _lastID(0)
 {
 	int initVal = 0;
-	_channelHeads.init(_sizeY, _sizeX, 1.0, origoBottomLeft, initVal);
-	_prevChannels.init(_sizeY, _sizeX, 1.0, origoBottomLeft, initVal);
+	_channelHeads.init(_sizeY, _sizeX, pixelSize, origoBottomLeft, initVal);
+	_prevChannels.init(_sizeY, _sizeX, pixelSize, origoBottomLeft, initVal);
 }
 	
 int ChannelHeadTracker::lastID() const

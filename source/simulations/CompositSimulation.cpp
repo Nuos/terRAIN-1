@@ -143,7 +143,7 @@ double compare_prediction_matrix( IntRasterMx & channelHeads, IntRasterMx & pred
 }
 bool CompositSimulation::run()
 {
-	setOutputDirectory("c:\\terrain_output2");
+	setOutputDirectory("c:\\terrain_output");
 	//setOutputDirectory("e:\\Solyom\\run1");
 	//setOutputDirectory("i:\\Solyom\\run1");
 	// simulation settings
@@ -153,9 +153,9 @@ bool CompositSimulation::run()
 	//ofRightSideAndTopLeft
 	//ofRightSideAndLeftMiddle
 	
-	//setOutflowType(ofLeftAndRightSide);
-	//setOutflowType(ofRightSide);
-	setOutflowType(ofTopSide);
+	setOutflowType(ofLeftAndRightSide);
+	//(ofRightSide);
+	//setOutflowType(ofTopSide);
 	//setOutflowType(ofRightSideAndTopLeft);
 	
 	SoilProductionType groundProductionType = gpNone;
@@ -166,7 +166,7 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stPixelPixelTransport;
 	
-	double rainTime = 1000;
+	double rainTime = 100;
 	double logTimeInc = 1;
 	double max_iteration_time = 1;
 	double min_iteration_time = 0.001;
@@ -180,15 +180,15 @@ bool CompositSimulation::run()
 	erosionRateParams.slope_exponent = 1.5;
 	erosionRateParams.simple_diffusion = true;
 
-	double kTect = 0.1;
+	double kTect = 0.0;
 	double kTectLeft = 0.1;
-	double kTectRight = 0.00;
+	double kTectRight = 0.1;
 	double kHor = 0.0;
 	double kTectSpread = 0.1;
 
 	// common variables
-	size_t nSizeX = 40;
-	size_t nSizeY = 40;
+	size_t nSizeX = 20;
+	size_t nSizeY = 20;
 	double EdgesLimit = 62;  //2;
 	double pixelSize = 10;
 	double rainIntensity = 1; // [length_unit/time_unit]
@@ -198,6 +198,7 @@ bool CompositSimulation::run()
 	double pitsum = 0;
 	double mx1sum = 0;
 	double lakeLevel = 100;
+	double rockLeftMax = -9999;
 	
 	DblRasterMx pixelSizeMatrix;
 	DblRasterMx mx1;
@@ -254,7 +255,7 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxSlopeCorrected);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0001, zeroPlusABit);
 	mapattr(nSizeY,nSizeX,pixelSize,5.0, five);
-	mapattr(nSizeY,nSizeX,pixelSize,0.1, tst);
+	mapattr(nSizeY,nSizeX,pixelSize,1000, tst);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxAccflux);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxLongest);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, logMxAccflux);
@@ -274,7 +275,7 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,100, EdgesLeft);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, xCoord);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, yCoord);
-	mapattr(nSizeY,nSizeX,pixelSize,1.0, bedloadRatio);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, bedloadRatio);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, kTectMxIteration);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, proOutflowPoints);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, proCatchment);
@@ -336,14 +337,14 @@ bool CompositSimulation::run()
 			int l = 0;
 			//for ( j = 0; j < nSizeX; j++ ){		
 			//			for ( l = 0; l < nSizeY; l++ ){		
-			//				//rock(l,j) = 100 - xCoord(l,j) * 0.001;
-			//				if (j < 1){
-			//					rock(l,j) = 101; // - xCoord(l,j) * 0.02;   
-			//				//	//EdgesRight(l,j) = 100 + 0.04 - xCoord(l,j) * 0.0001;       
-			//				} else {
-			//					rock(l,j) = 80; // - xCoord(l,j) * 0.001;
-			//				//	//rock(l,j) = 100 + 0.2 - xCoord(l,j) * 0.001;
-			//				}
+			//				rock(l,j) = 100 + 2 - xCoord(l,j) * 0.01;
+			//				//if (j < 1){
+			//				//	rock(l,j) = 101; // - xCoord(l,j) * 0.02;   
+			//				////	//EdgesRight(l,j) = 100 + 0.04 - xCoord(l,j) * 0.0001;       
+			//				//} else {
+			//				//	rock(l,j) = 80; // - xCoord(l,j) * 0.001;
+			//				////	//rock(l,j) = 100 + 0.2 - xCoord(l,j) * 0.001;
+			//				//}
 			//			}
 			//   }
 			rock = rock + randomNoise * multiplicatorSmall;
@@ -351,7 +352,7 @@ bool CompositSimulation::run()
 													
 			
 			//if (!loadFromArcgis("e:\\Solyom\\run1\\mx1000101b.asc",rock)) {
-			/*if (!loadFromArcgis("c:\\terrain_output5\\mx1000055.asc",rock)) {
+			/*if (!loadFromArcgis("c:\\terrain_output\\mx1000006.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
 			}*/
@@ -409,8 +410,8 @@ bool CompositSimulation::run()
 						}
 			   }
 							//mxFluid(15,0) = mxFluid(15,0)*1;
-							mxFluid(6,0) = mxFluid(9,0)*1;
-							mxFluid(13,0) = mxFluid(10,0)*1;
+							//mxFluid(6,0) = mxFluid(6,0)*100;
+							//mxFluid(13,0) = mxFluid(13,0)*100;
 							//mxFluid(24,0) = mxFluid(24,0)*1;
 
 							/*mxFluid(28,0) = mxFluid(28,0)*10;
@@ -447,6 +448,7 @@ bool CompositSimulation::run()
 	statFile2.print("EdgesLimit");
 	statFile2.print("mx1sum");
 	statFile2.print("lake level");
+	statFile2.print("rockLeftMax");
 	statFile2.endl();
 
 	StatFile statChannelHeads("statfile_channelheads.txt",25);
@@ -461,7 +463,7 @@ bool CompositSimulation::run()
 	statChannelHeads.endl();
 
 	
-	ChannelHeadTracker channelHeadTracker(nSizeX, nSizeY);
+	ChannelHeadTracker channelHeadTracker(nSizeX, nSizeY, pixelSize);
 	while (stopCondition) 
 	{
 		bool redo_iteration = true;
@@ -612,6 +614,19 @@ bool CompositSimulation::run()
 
 			compute_material_movement(mxSedimentMovementFluvial,mxSedInFluvial, mxSedOutFluvial);
 
+			//mxSedOutFluvial(nSizeY-1,0) = tst(nSizeY-1,0);
+			//mxSedOutFluvial(0,0) = tst(0,0);
+
+			//for ( j = 0; j < nSizeY; j++ ){			  
+			//		   for ( l = 0; l < nSizeX; l++ ){
+			//			   if (l == 0){	
+			//				 //if (mxSedOutFluvial(j,l) > tst(j,l)){
+			//					 mxSedOutFluvial(j,l) == tst(j,l);
+			//				 //}
+			//			   }
+			//		   }					   
+			//   }
+
 			rock = rock - mxSedOutFluvial;
 
 			if (sedimentTransportType == stPixelPixelTransport) {
@@ -628,7 +643,7 @@ bool CompositSimulation::run()
 
 			mxSedFluvialDifference = mxSedOutFluvial - mxSedInFluvial;
 
-			mxSedFluvialDifferenceRatio = mxSedFluvialDifference / mxSedOutFluvial;
+			mxSedFluvialDifferenceRatio = (mxSedFluvialDifference / (mxSedOutFluvial*tst))*tst;
 			
 			/* check mass conservation*/
 
@@ -650,27 +665,27 @@ bool CompositSimulation::run()
 			DblRasterMx kTectIterationRight;
 			mapattr(nSizeY,nSizeX,pixelSize,kTectRight*iteration_time, kTectIterationRight);		
 				
-			//for ( j = 0; j < nSizeX; j++ ){		
-			//			for ( l = 0; l < nSizeY; l++ ){			
-			//				//if (j < 5){
-			//				////if (mxFluid(l,j) == 10000){
-			//				//	//kTectIteration(l,j) =	(xCoord(l,j)*0.01) * kTectIteration(l,j); 
-			//					kTectIteration(l,j) =	0; 
-			//				//	//kTectIterationLeft(l,j) = kTectIterationLeft(l,j) * 10;
-			//				//} if (j > 55){
-			//				//	//kTectIteration(l,j) = (2 - (xCoord(l,j)*0.01)) * kTectIteration(l,j);	
-			//					kTectIteration(l,j) =	0; 
-			//				//} else {
-			//					//kTectIteration(l,j) = (1-abs(1-(xCoord(l,j)*0.01))/1.1) * kTectIteration(l,j);	
-			//					kTectIteration(l,j) = (2-abs(2-(xCoord(l,j)*0.01))/1.1) * kTectIteration(l,j);	// /0.6, 1.1
-			//				//}
-			//			}
-			//   }
+			for ( j = 0; j < nSizeX; j++ ){		
+						for ( l = 0; l < nSizeY; l++ ){			
+							if (j < 1){
+							////if (mxFluid(l,j) == 10000){
+							//	//kTectIteration(l,j) =	(xCoord(l,j)*0.01) * kTectIteration(l,j); 
+								kTectIteration(l,j) =	0; 
+							//	//kTectIterationLeft(l,j) = kTectIterationLeft(l,j) * 10;
+							} if (j > 10){
+							//	//kTectIteration(l,j) = (2 - (xCoord(l,j)*0.01)) * kTectIteration(l,j);	
+								kTectIteration(l,j) =	0; 
+							//} else {
+								//kTectIteration(l,j) = (1-abs(1-(xCoord(l,j)*0.01))/1.1) * kTectIteration(l,j);	
+								//kTectIteration(l,j) = (2-abs(2-(xCoord(l,j)*0.01))/1.1) * kTectIteration(l,j);	// /0.6, 1.1
+							}
+						}
+			   }
 
-							kTectIterationLeft(6,0) = kTectIteration(6,0)*1;
+							//kTectIterationLeft(6,0) = kTectIteration(6,5)*1;
 							//kTectIterationLeft(15,0) = kTectIteration(15,0)*1;
 							//kTectIterationLeft(24,0) = kTectIteration(24,0)*1;
-							kTectIterationLeft(13,0) = kTectIteration(13,0)*1;
+							//kTectIterationLeft(13,0) = kTectIteration(13,5)*1;
 
 			elapsedTime+=iteration_time;
 			std::cout << "Iteration nr: " << iteration_nr << " elapsed time: " << elapsedTime << std::endl; 		
@@ -701,12 +716,12 @@ bool CompositSimulation::run()
 			 //size_t g = 0;
 			 //size_t h = 0;
 
-			if (elapsedTime < 0) {
+			if (elapsedTime < 1) {
 				//kTectMxIteration.fill( kTect * iteration_time * 1);				
 				for ( g = 0; g < nSizeY; g++ ){	
 					 for ( h = 0; h < nSizeX; h++ ){
 					 //kTectMxIteration(g,h) = (kTect + g * 0.01) * iteration_time;
-						kTectMxIteration(g,h) = kTect * iteration_time * 1;
+						kTectIteration(g,h) = kTect * iteration_time * 1;
 						//kHor = 0.0;
 					 }
 				 }
@@ -716,14 +731,31 @@ bool CompositSimulation::run()
 				for ( g = 0; g < nSizeY; g++ ){	
 					 for ( h = 0; h < nSizeX; h++ ){
 						 //kTectMxIteration(g,h) = (kTect - g * 0.001) * iteration_time;
-						 kTectMxIteration(g,h) = kTect * iteration_time * 1;
+						 kTectIteration(g,h) = kTect * iteration_time * 1;
 						 //kHor = 1;
 					 }
 				 }
 			}
-					
+			
+			rockLeftMax = -9999;
 			EdgesLeft = EdgesLeft - kTectIterationLeft;
 			EdgesRight = EdgesRight - kTectIterationRight;
+				/*for ( j = 0; j < nSizeY; j++ ){			  
+					   for ( l = 0; l < nSizeX; l++ ){
+						   if (l == 0){	
+							 if (rock(j,l) > rockLeftMax){
+								 rockLeftMax == rock(j,l);
+							 }
+						   }
+					   }					   
+			   }*/
+			/*	rockLeftMax=rock(0,0);
+			for ( j = 0; j < nSizeY; j++ ){			  
+					   for ( l = 0; l < nSizeX; l++ ){
+						   EdgesRight(j,l) = rockLeftMax + 2;
+					   }					   
+			   }*/
+			
 
 			    size_t j = 0;
 				size_t l = 0;
@@ -732,20 +764,23 @@ bool CompositSimulation::run()
 					//rock(j,0) = rock(j,0) + kTectMxIteration(j,0); 
 				   //rock(j,nSizeX-1) = rock(j,nSizeX-1) - kTectMxIteration(j,nSizeX-1); 
 					   for ( l = 0; l < nSizeX; l++ ){
-						   if (l == 0){					
-							  rock(j,l) = rock(j,l) + kTectIterationLeft(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
-						   } if (l < EdgesLimit && l > 0){		
+						   if (l == 0){		
+							   rock(j,l) = EdgesLeft(j,l);
+							  //rock(j,l) = rock(j,l) + kTectIterationLeft(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
+						   //} if (l < EdgesLimit && l > 0){		
+							    } if (l < nSizeX-1 && l > 0){		
 							//   if (l < 1){					
 							  //rock(j,l) = rock(j,l) + kTectIterationLeft(j,l); // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
 							   rock(j,l) = rock(j,l) + kTectIteration(j,l); // * tst(j,l);   
-						  } if (l >= EdgesLimit){		
+						  //} if (l >= EdgesLimit){		
+						   } if (l == nSizeX-1){
 							   // } else {						     
-							  //rock(j,l) = rock(j,l) + kTectIteration(j,l); // * tst(j,l);    
+							  //rock(j,l) = rock(j,l) - kTectIterationRight(j,l); // * tst(j,l);    
 							  rock(j,l) = EdgesRight(j,l);
 						   }
 					   }
 					   //rock(j,0) = EdgesLeft(j,0);   
-					   rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
+					   //rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
 					   //bedloadRatio(l,EdgesLimit-1) = 0;
 					   //bedloadRatio(l,EdgesLimit-2) = 0;
 					   //bedloadRatio(l,EdgesLimit-3) = 0;
@@ -1070,6 +1105,7 @@ bool CompositSimulation::run()
 				statFile2.print(EdgesLimit);
 				statFile2.print(mx1sum);
 				statFile2.print(lakeLevel);
+				statFile2.print(rockLeftMax);
 				statFile2.endl();
 			
 

@@ -54,16 +54,18 @@ private:
 	ChannelHeadMap _channelHeadMap;
 	IntRasterMx _channelHeads;
 	DblRasterMx  _prevChannels;
+	double _channelShift;
 
-	void copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target);
+	void copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target, double id);
 	double channelDistance( DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & distances);
-
+	double computeChannelShift(DblRasterMx & channelTrackPrev, DblRasterMx & channelTrackNew);
 public:
 	ChannelHeadTracker(size_t sizeX, size_t sizeY,double pixelSize);
 	int lastID() const;
 	ChannelHeadMap & channelHeadMap();
 	IntRasterMx & channelHeads() ;
 	int track(const DblRasterMx & currentChannelHeads,  DblRasterMx & currentChannels, double time);
+	double channelShift() const;
 };
 
 }

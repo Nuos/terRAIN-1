@@ -93,9 +93,40 @@ IntRasterMx & ChannelHeadTracker::channelHeads()
 	return _channelHeads;
 }
 
+
+double ChannelHeadTracker::computeChannelShift(DblRasterMx & channelTrackPrev, DblRasterMx & channelTrackNew)
+{
+	if (_lastID < 1 || _prevChannels.getColNr() < 1 ||  _prevChannels.getRowNr() < 1)
+		return 0;
+
+	DblRasterMx distances; 
+	RasterPositionMatrix positions;
+	distanceTransform(channelTrackPrev, distances, positions);
+
+	DblRasterMx::iterator it1 = channelTrackNew.begin(), end = channelTrackNew.end();
+	DblRasterMx::iterator iDistences = distances.begin();
+
+	double shiftSum = 0.0;
+	for (; it1 != end; ++it1, ++iDistences) {
+		if (*it1 > 0.0)
+			shiftSum+=*iDistences;
+	}
+	
+	return shiftSum;
+}
+
 int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRasterMx & currentChannels, double time)
 {
+	
 	DblRasterMx currentChannelHeadsCopy(currentChannelHeads);
+
+	DblRasterMx channelTrackPrev;
+	channelTrackPrev.initlike(currentChannels);
+	channelTrackPrev.fill(0.0);
+
+	DblRasterMx channelTrackNew;
+	channelTrackNew.initlike(currentChannels);
+	channelTrackNew.fill(0.0);
 
 	//first try to track the current channel heads:
 	
@@ -112,6 +143,8 @@ int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaster
 			
 			// the channel head did not move
 			if (*iCurrentChannelHead > 1e-6) {
+				copyChannelTo(_prevChannels, row, col, channelTrackPrev, 1.0);
+				copyChannelTo(currentChannels, row, col, channelTrackNew, 1.0);
 				*iCurrentChannelHead = 0.0;
 				continue;
 			}
@@ -148,7 +181,7 @@ int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaster
 			} else if (n > 1) { // the channel head moved, but there are multiple directions
 				
 				DblRasterMx channelPixels;
-				copyChannelTo(_prevChannels, row, col, channelPixels); 
+				copyChannelTo(_prevChannels, row, col, channelPixels, 1.0); 
 				DblRasterMx distances; 
 				RasterPositionMatrix positions;
 				distanceTransform(channelPixels, distances, positions);
@@ -167,13 +200,19 @@ int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaster
 				new_pos = neighbourChannelHeadPositions[minDistanceIndex];
 			}
 
+			copyChannelTo(_prevChannels, row, col, channelTrackPrev, 1.0);
+			copyChannelTo(currentChannels, new_pos.getRow(), new_pos.getCol(), channelTrackNew, 1.0);
+
 			*iChannelHeads = 0;
 			_channelHeads(new_pos.getRow(), new_pos.getCol()) = id;
 		    _channelHeadMap[id].moveTo(new_pos, time);
 		    currentChannelHeadsCopy(new_pos.getRow(), new_pos.getCol()) = 0.0;
+
 		}
 	}
 	
+	_channelShift = computeChannelShift(channelTrackPrev, channelTrackNew);
+
 	// find the new channel heads
 	DblRasterMx::iterator iCurrentChannelHead = currentChannelHeadsCopy.begin(), endCurrentChannelHead = currentChannelHeadsCopy.end();
 
@@ -192,7 +231,7 @@ int ChannelHeadTracker::track(const DblRasterMx & currentChannelHeads, DblRaster
 	return nr_of_captures;
 }
 
-void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target)
+void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHeadRow, size_t channelHeadCol, DblRasterMx & target, double id)
 {
 	double  initVal = 0;
 	target.initlike(channels);
@@ -204,7 +243,7 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 	double currentVal = channels(currentRow, currentCol);
 
 	while ( currentVal > 1e-6) {
-		target(	currentRow, currentCol ) = 1.0;
+		target(	currentRow, currentCol ) = id;
 		currentVal = 0.0;
 		DblRasterMx::iterator it = channels.getIteratorAt( currentRow, currentCol );
 		for (unsigned char cc = 1; cc < 10; ++cc) {
@@ -220,7 +259,7 @@ void ChannelHeadTracker::copyChannelTo(DblRasterMx & channels, size_t channelHea
 					currentRow = itNeighbour.getRow();
 					currentCol = itNeighbour.getCol();
 					if (target(	currentRow, currentCol ) < 1e-6) {
-						currentVal = 1.0;
+						currentVal =id;
 						break;
 					}
 				}
@@ -273,6 +312,11 @@ double ChannelHeadTracker::channelDistance( DblRasterMx & channels, size_t chann
 
 	}
 	return sum;
+}
+
+double ChannelHeadTracker::channelShift() const
+{
+	return _channelShift;
 }
 
 }

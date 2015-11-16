@@ -66,6 +66,7 @@ public:
 	IntRasterMx & channelHeads() ;
 	int track(const DblRasterMx & currentChannelHeads,  DblRasterMx & currentChannels, double time);
 	double channelShift() const;
+	const DblRasterMx & prevChannels() const;
 };
 
 }

@@ -143,7 +143,7 @@ double compare_prediction_matrix( IntRasterMx & channelHeads, IntRasterMx & pred
 }
 bool CompositSimulation::run()
 {
-	setOutputDirectory("c:\\terrain_output");
+	setOutputDirectory("c:\\terrain_output2");
 	//setOutputDirectory("e:\\Solyom\\run1");
 	//setOutputDirectory("i:\\Solyom\\run1");
 	// simulation settings
@@ -153,10 +153,12 @@ bool CompositSimulation::run()
 	//ofRightSideAndTopLeft
 	//ofRightSideAndLeftMiddle
 	
-	//setOutflowType(ofLeftAndRightSide);
-	setOutflowType(ofRightSide);
+	setOutflowType(ofLeftAndRightSide);
+	//setOutflowType(ofRightSide);
+	//setOutflowType(ofLeftSide);
 	//setOutflowType(ofTopSide);
 	//setOutflowType(ofRightSideAndTopLeft);
+	//setOutflowType(ofRightSideAndLeftMiddle);
 	
 	SoilProductionType groundProductionType = gpNone;
 	
@@ -166,10 +168,10 @@ bool CompositSimulation::run()
 	//stTotalRemoval stPixelPixelTransport
 	SedimentTransportType sedimentTransportType = stPixelPixelTransport;
 	
-	double rainTime = 500;
+	double rainTime = 1000;
 	double logTimeInc = 1;
 	double max_iteration_time = 1;
-	double min_iteration_time = 0.001;
+	double min_iteration_time = 0.01;
 	
 	erosion_rate_params erosionRateParams;
 	erosionRateParams.critical_slope = M_PI/2/2;
@@ -180,18 +182,19 @@ bool CompositSimulation::run()
 	erosionRateParams.slope_exponent = 1.5;
 	erosionRateParams.simple_diffusion = true;
 
-	double kTect = 0.1;
+	double kTect = 0.0;
 	double kTectLeft = 0.1;
-	double kTectRight = 0.0;
-	double kHor = 0.0;
-	double kTectSpread = 0.1;
+	double kTectRight = 0.1;
+	double kTectGen = 0.0; //0.02;
+	double kHor = 0;
+	double kTectSpread = 10;
 
 	// common variables
-	size_t nSizeX = 50;
-	size_t nSizeY = 50;
-	double EdgesLimit = 62;  //2;
-	double pixelSize = 10;
-	double rainIntensity = 1; // [length_unit/time_unit]
+	size_t nSizeX = 30;
+	size_t nSizeY = 30;
+	double EdgesLimit = 100;  //2;
+	double pixelSize = 10000;
+	double rainIntensity = 0.1; // [length_unit/time_unit]
 	double iteration_time = max_iteration_time; // [time_unit]
 	double accumulated_rain = 0.0; //[length_unit] do not change
 	double pathsum = 0;
@@ -242,6 +245,7 @@ bool CompositSimulation::run()
 	DblRasterMx mask;
 	DblRasterMx channelHeads;
 	DblRasterMx pitCatchments;
+	DblRasterMx numValveA;
 
 	MultiflowDMatrix mxSMLDD;
 	MultiflowDMatrix terrainMLDD;
@@ -286,14 +290,16 @@ bool CompositSimulation::run()
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mask);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, channelHeads);
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, pitCatchments);
+	mapattr(nSizeY,nSizeX,pixelSize,0.0, numValveA);
 	
 	mapattr(nSizeY,nSizeX,pixelSize, 0.0, erosionRateParams.diffusive_const);
-	mapattr(nSizeY,nSizeX,pixelSize,0.001, erosionRateParams.fluvial_const); //0.00001
+	mapattr(nSizeY,nSizeX,pixelSize,0.00001, erosionRateParams.fluvial_const); //0.00001
 	DblRasterMx mxRain;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxRain);
 	DblRasterMx mxFlowDepth;
 	mapattr(nSizeY,nSizeX,pixelSize,0.0, mxFlowDepth);
 	double elapsedTime = 0.0;
+	double shiftTime = 0.0;
 	double elapsedRainTime = 0.0;
 	// base terrain layer (rock based)
 	DblRasterMx rock;
@@ -305,6 +311,7 @@ bool CompositSimulation::run()
 	IntRasterMx predictionSedOutFluvialMx(nSizeY,nSizeX, pixelSize,origoBottomLeft, nInitVal);
 	IntRasterMx predictiondAdLMx(nSizeY,nSizeX, pixelSize,origoBottomLeft, nInitVal);
 	IntRasterMx predictiondAdLAMx(nSizeY,nSizeX, pixelSize,origoBottomLeft, nInitVal);
+	IntRasterMx predictionSlopeMx(nSizeY,nSizeX, pixelSize,origoBottomLeft, nInitVal);
 
 	int lastChannelHeadID = 0;
 	int prevChannelHead_nr = 0;
@@ -331,28 +338,30 @@ bool CompositSimulation::run()
 			mapattr(nSizeY,nSizeX,pixelSize,0.0, soil);
 			//saveToArcgis(randomNoise, 0, "randomNoise");
 
+			rock = rock + randomNoise * multiplicatorSmall;
 			xcoordinate(rock, xCoord);
 			ycoordinate(rock, yCoord);
 			int j = 0;
 			int l = 0;
 			//for ( j = 0; j < nSizeX; j++ ){		
+			//	//rock(35,j) = 98 - xCoord(35,j) * 0.002; 
 			//			for ( l = 0; l < nSizeY; l++ ){		
-			//				rock(l,j) = 100 + 1 - xCoord(l,j) * 0.005;
-			//				//if (j < 1){
-			//				//	rock(l,j) = 101; // - xCoord(l,j) * 0.02;   
+			//				//rock(l,j) = 100 + xCoord(l,j) * 0.005; // + abs(350 - yCoord(l,j)) * 0.01;
+			//				if (j < 10){
+			//					rock(l,j) = rock(l,j) + 10; // - xCoord(l,j) * 0.02;   
 			//				////	//EdgesRight(l,j) = 100 + 0.04 - xCoord(l,j) * 0.0001;       
 			//				//} else {
 			//				//	rock(l,j) = 80; // - xCoord(l,j) * 0.001;
 			//				////	//rock(l,j) = 100 + 0.2 - xCoord(l,j) * 0.001;
-			//				//}
+			//				}
 			//			}
 			//   }
-			rock = rock + randomNoise * multiplicatorSmall;
+			//rock = rock + randomNoise * multiplicatorSmall;
 			
 													
 			
 			//if (!loadFromArcgis("e:\\Solyom\\run1\\mx1000101b.asc",rock)) {
-			/*if (!loadFromArcgis("c:\\terrain_output\\mx1000006.asc",rock)) {
+			/*if (!loadFromArcgis("c:\\terrain_output\\mx1000101.asc",rock)) {
 				std::cout << "Unable to read arc gis file" << std::endl;
 				return false;
 			}*/
@@ -412,14 +421,17 @@ bool CompositSimulation::run()
 							//mxFluid(9,0) = mxFluid(9,0)*100;
 							//mxFluid(6,0) = mxFluid(6,0)*2;
 							//mxFluid(13,0) = mxFluid(13,0)*2;
-							//mxFluid(24,0) = mxFluid(24,0)*1;
+							//mxFluid(35,nSizeX-1) = mxFluid(35,nSizeX-1)*1000;
+							//mxFluid(35,0) = mxFluid(35,0)*1000;
 
 							/*mxFluid(28,0) = mxFluid(28,0)*10;
 							mxFluid(29,0) = mxFluid(29,0)*10;
 							mxFluid(30,0) = mxFluid(30,0)*10;
 							mxFluid(31,0) = mxFluid(31,0)*10;*/
 
-
+							//EdgesLeft(35,0) = 98;
+							//EdgesRight(35,nSizeX-1) = 96;
+							//EdgesLeft(35,0) = 98;
 
 	size_t iteration_nr = 0;
 	double waterOnPits = 0.0;
@@ -446,6 +458,8 @@ bool CompositSimulation::run()
 	statFile2.print("pathsum");
 	statFile2.print("pitsum");
 	statFile2.print("EdgesLimit");
+	statFile2.print("shiftTime");
+	statFile2.print("shiftTimeInc2");
 	statFile2.print("mx1sum");
 	statFile2.print("lake level");
 	statFile2.print("rockLeftMax");
@@ -456,6 +470,7 @@ bool CompositSimulation::run()
 	statChannelHeads.print("rate_of_captures_prev_timestep");
 	statChannelHeads.print("rate_of_moved_channel_heads");
 	statChannelHeads.print("rate_of_matching_prediction_accflux");
+	statChannelHeads.print("rate_of_matching_prediction_Slope");
 	statChannelHeads.print("rate_of_matching_prediction_sedoutfluvial");
 	statChannelHeads.print("rate_of_matching_prediction_dAdL");
 	statChannelHeads.print("rate_of_matching_prediction_dAdLA");
@@ -561,7 +576,7 @@ bool CompositSimulation::run()
 			catchment(mxSMLDD, proOutflowPoints, proCatchment);
 			 size_t g = 0;
 			 size_t h = 0;
-			for ( g = 0; g < nSizeY; g++ ){	
+			/*for ( g = 0; g < nSizeY; g++ ){	
 					 for ( h = 0; h < nSizeX; h++ ){
 						 if (retroCatchment(g,h) == 1) {
 							 bedloadRatio(g,h) = 1.0;
@@ -569,7 +584,7 @@ bool CompositSimulation::run()
 							 bedloadRatio(g,h) = 1.0;
 						 }
 					 }
-			 }
+			 }*/
 			//lakeLevel = 100 - (elapsedTime * 0.01); // + sin(elapsedTime/10);
 			//for ( g = 0; g < nSizeY; g++ ){	
 			//		 for ( h = 0; h < nSizeX; h++ ){
@@ -645,6 +660,8 @@ bool CompositSimulation::run()
 			mxSedFluvialDifference = mxSedOutFluvial - mxSedInFluvial;
 
 			mxSedFluvialDifferenceRatio = (mxSedFluvialDifference / (mxSedOutFluvial*tst))*tst;
+
+			numValveA = mxSedFluvialDifferenceRatio * mxAccflux;
 			
 			/* check mass conservation*/
 
@@ -664,7 +681,9 @@ bool CompositSimulation::run()
 			DblRasterMx kTectIterationLeft;
 			mapattr(nSizeY,nSizeX,pixelSize,kTectLeft*iteration_time, kTectIterationLeft);
 			DblRasterMx kTectIterationRight;
-			mapattr(nSizeY,nSizeX,pixelSize,kTectRight*iteration_time, kTectIterationRight);		
+			mapattr(nSizeY,nSizeX,pixelSize,kTectRight*iteration_time, kTectIterationRight);	
+			DblRasterMx kTectGenIteration;
+			mapattr(nSizeY,nSizeX,pixelSize,kTectGen*iteration_time, kTectGenIteration);
 				
 			//for ( j = 0; j < nSizeX; j++ ){		
 			//			for ( l = 0; l < nSizeY; l++ ){			
@@ -718,25 +737,94 @@ bool CompositSimulation::run()
 			 //size_t g = 0;
 			 //size_t h = 0;
 
-			if (elapsedTime < 1) {
-				//kTectMxIteration.fill( kTect * iteration_time * 1);				
-				for ( g = 0; g < nSizeY; g++ ){	
-					 for ( h = 0; h < nSizeX; h++ ){
-					 //kTectMxIteration(g,h) = (kTect + g * 0.01) * iteration_time;
-						kTectIteration(g,h) = kTect * iteration_time * 1;
-						//kHor = 0.0;
-					 }
-				 }
-			}
+			//if (elapsedTime < 20) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 0.001;
+			//	shiftTime+=iteration_time*0.001;
+			//	kTect = 0.1;
+			//	//for ( g = 0; g < nSizeY; g++ ){	
+			//	//	 for ( h = 0; h < nSizeX; h++ ){
+			//	//	 //kTectMxIteration(g,h) = (kTect + g * 0.01) * iteration_time;
+			//	//		kTectIteration(g,h) = kTect * iteration_time * 1;
+			//	//		//kHor = 0.0;
+			//	//	 }
+			//	// }
+			//}
+			//if (elapsedTime >= 20 && elapsedTime < 250) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.1;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 250 && elapsedTime < 300) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.001;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 300 && elapsedTime < 450) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.1;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 450 && elapsedTime < 500) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.001;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 500 && elapsedTime < 650) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.1;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 650 && elapsedTime < 700) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.001;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 700 && elapsedTime < 950) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 1;
+			//	shiftTime+=iteration_time*0.1;
+			//	kTect = 0.1;
+			//}
+			//if (elapsedTime >= 130 && elapsedTime < 300) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 0.001;				
+			//	shiftTime+=iteration_time*0.0001;
+			//	kTect = 0;
+			//	kTectLeft = 0;
+			//}
+			//if (elapsedTime >= 300 && elapsedTime < 1000) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 0.001;				
+			//	shiftTime+=iteration_time*0.01;
+			//	kTect = 0.1;
+			//	kTectLeft = 0.1;
+			//}
+			//if (elapsedTime >= 500 && elapsedTime < 600) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 0.001;				
+			//	shiftTime+=iteration_time*1;
+			//}
+			//if (elapsedTime >= 600 && elapsedTime < 1000) {
+			//	//kTectMxIteration.fill( kTect * iteration_time * 1);				
+			//	//kTectSpread = 0.001;				
+			//	shiftTime+=iteration_time*0.01;
+			//}
 			else {
-				//kTectMxIteration.fill(0.0);
-				for ( g = 0; g < nSizeY; g++ ){	
-					 for ( h = 0; h < nSizeX; h++ ){
-						 //kTectMxIteration(g,h) = (kTect - g * 0.001) * iteration_time;
-						 kTectIteration(g,h) = kTect * iteration_time * 1;
-						 //kHor = 1;
-					 }
-				 }
+				//kTectMxIteration.fill(0.0);				
+				//for ( g = 0; g < nSizeY; g++ ){	
+				//	 for ( h = 0; h < nSizeX; h++ ){
+				//		 //kTectMxIteration(g,h) = (kTect - g * 0.001) * iteration_time;
+				//		 kTectIteration(g,h) = kTect * iteration_time * 1;
+				//		 //kHor = 1;
+				//	 }
+				// }
 			}
 			
 			rockLeftMax = -9999;
@@ -767,23 +855,24 @@ bool CompositSimulation::run()
 				   //rock(j,nSizeX-1) = rock(j,nSizeX-1) - kTectMxIteration(j,nSizeX-1); 
 					   for ( l = 0; l < nSizeX; l++ ){
 						   if (l == 0){		
-							   //rock(j,l) = EdgesLeft(j,l);
-							  //rock(j,l) = rock(j,l) + kTectIterationLeft(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
-							  rock(j,l) = rock(j,l) + kTectIterationLeft(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
-						   //} if (l < EdgesLimit && l > 0){		
-							    } if (l < nSizeX-1 && l > 0){		
+							   rock(j,l) = EdgesLeft(j,l);
+							  //rock(j,l) = rock(j,l) - kTectIterationLeft(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
+							  //rock(j,l) = rock(j,l) + kTectIterationLeft(j,l) + kTectGenIteration(j,l);  // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
+						   } if (l < EdgesLimit && l > 0){		
+							    //} if (l < nSizeX-1 && l > 0){		
 							//   if (l < 1){					
 							  //rock(j,l) = rock(j,l) + kTectIterationLeft(j,l); // * tst(j,l); // * ((EdgesLimit - l)/ EdgesLimit); 
-							   rock(j,l) = rock(j,l) + kTectIteration(j,l); // * tst(j,l);   
-						  //} if (l >= EdgesLimit){		
-						   } if (l == nSizeX-1){
+							   rock(j,l) = rock(j,l) + kTectIteration(j,l) + kTectGenIteration(j,l); // * tst(j,l);   
+						  } if (l >= EdgesLimit){		
+						   //} if (l == nSizeX-1){
 							   // } else {						     
-							  //rock(j,l) = rock(j,l) - kTectIterationRight(j,l); // * tst(j,l);    
-							  rock(j,l) = EdgesRight(j,l);
+							  rock(j,l) = rock(j,l) + kTectGenIteration(j,l); // - kTectIterationRight(j,l); // * tst(j,l);    
+							  //rock(j,l) = EdgesRight(j,l);
 						   }
 					   }
 					   //rock(j,0) = EdgesLeft(j,0);   
-					   //rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
+					   rock(j,nSizeX-1) = EdgesRight(j,nSizeX-1);
+					   //rock(j,nSizeX-1) = rock(j,nSizeX-1);  // - kTectIterationRight(j,nSizeX-1);
 					   //bedloadRatio(l,EdgesLimit-1) = 0;
 					   //bedloadRatio(l,EdgesLimit-2) = 0;
 					   //bedloadRatio(l,EdgesLimit-3) = 0;
@@ -822,7 +911,7 @@ bool CompositSimulation::run()
 							rock(33,2) = 200;
 							rock(34,2) = 200;		*/					
 			
-			if (elapsedTime >= nextShiftTime2 && EdgesLimit < nSizeX-2) {
+				if (shiftTime >= nextShiftTime2 && EdgesLimit < nSizeX-2) {
 				nextShiftTime2+=shiftTimeInc2;
 				EdgesLimit=EdgesLimit+1;
 			}
@@ -907,14 +996,17 @@ bool CompositSimulation::run()
 								streams(l,j) = 1;                  						
 							}
 						}
-			   }			  
-			   
+			   }
+			   DblRasterMx mxDiagonal;
+			   diagonal(mxSMLDD, mxDiagonal);
 			   path (mxSMLDD, streams, path1);
 			 
 			   pathsum = 0.0;
 			   for ( j = 0; j < nSizeX; j++ ){			
-						for ( l = 0; l < nSizeY; l++ ){			
-							pathsum = path1(l,j) + pathsum;							
+						for ( l = 0; l < nSizeY; l++ ){	
+							if ( path1(l,j) > 0) {
+								pathsum += mxDiagonal(l,j);
+							}
 						}
 			   }
 
@@ -971,7 +1063,7 @@ bool CompositSimulation::run()
 						}
 			   }
 
-			   double rate_of_moved_channel_heads = 1.0;
+			   double rate_of_moved_channel_heads = 0.0;
 			   if ( nr_of_channel_heads_prev > 0 )
 					rate_of_moved_channel_heads = static_cast<double>(nr_of_moved_channel_heads) / nr_of_channel_heads_prev;
 			   
@@ -985,8 +1077,10 @@ bool CompositSimulation::run()
 			   double rate_of_true_predictions_SedOutFluvial = compare_prediction_matrix(movedChannelHeads, predictionSedOutFluvialMx);
 			   double rate_of_true_predictions_dAdL = compare_prediction_matrix(movedChannelHeads, predictiondAdLMx);
 			   double rate_of_true_predictions_dAdLA = compare_prediction_matrix(movedChannelHeads, predictiondAdLAMx);
+			   double rate_of_true_predictions_Slope = compare_prediction_matrix(movedChannelHeads, predictionSlopeMx);
 			   
 			   statChannelHeads.print( rate_of_true_predictions_accflux );
+			   statChannelHeads.print( rate_of_true_predictions_Slope );
 			   statChannelHeads.print( rate_of_true_predictions_SedOutFluvial ); 
 			   statChannelHeads.print( rate_of_true_predictions_dAdL );
 			   statChannelHeads.print( rate_of_true_predictions_dAdLA );
@@ -1012,6 +1106,7 @@ bool CompositSimulation::run()
 								DblRasterMx::iterator itSedOutFluvial = mxSedOutFluvial.getIteratorAt(j,l);
 								DblRasterMx::iterator itdAdL = dAdL.getIteratorAt(j,l);
 								DblRasterMx::iterator itdAdLA = dAdLA.getIteratorAt(j,l);
+								DblRasterMx::iterator itSlope = mxSlope.getIteratorAt(j,l);
 								
 								//* begin prediction based on mxAccflux
 								unsigned char max_val_cc = 5;
@@ -1093,6 +1188,26 @@ bool CompositSimulation::run()
 								predictiondAdLAMx(new_row, new_col) = id;
 								//* end prediction based on dAdLA
 
+								//* begin prediction based on Slope
+								max_val_cc = 5;
+								max_val = -1.0;
+								for (unsigned char cc = 1; cc < 10; ++cc) {
+									if (cc==5 || !itSlope.isValidItemByChainCode(cc)) {
+										continue;									
+									}
+									double value_Slope = itSlope.chain_code(cc);			// chain code: 1...9
+									if ( value_Slope > max_val) {
+										max_val = value_Slope;
+										max_val_cc = cc;
+									}
+								}
+
+								delta = itdAdLA.getChainCodeDelta(max_val_cc);	// path to neighbour
+								new_row = j + delta._nDRow;
+								new_col = l + delta._nDCol;
+								predictionSlopeMx(new_row, new_col) = id;
+								//* end prediction based on Slope
+
 							}
 						}
 			   }
@@ -1117,17 +1232,20 @@ bool CompositSimulation::run()
 			    statFile2.print(pathsum);
 				statFile2.print(pitsum);
 				statFile2.print(EdgesLimit);
+				statFile2.print(shiftTime);
+				statFile2.print(shiftTimeInc2);
 				statFile2.print(mx1sum);
 				statFile2.print(lakeLevel);
 				statFile2.print(rockLeftMax);
 				statFile2.endl();
 			
-
-			   //saveToArcgis(mx1,log_index,"mx2");			   
+					//saveToAsc(mxAccflux, log_index, "accflux_asc");
+					//saveToAsc(mxSlope, log_index, "slope");
+					//saveToArcgis(mx1,log_index,"mx2");			   
 					saveToArcgis(mx1,log_index,"mx1");
 					saveToArcgis(mxAccflux,log_index,"accflux");
 					//saveToArcgis(kTectIteration,log_index,"kTectIteration");
-					saveToArcgis(mxSlopeCorrected,log_index,"slope");
+					//saveToArcgis(mxSlopeCorrected,log_index,"slope");
 					//saveToArcgis(mxFluid, log_index, "mxFluid");
 					//saveToArcgis(proOutflowPoints, log_index, "pro");
 					//saveToArcgis(proCatchment, log_index, "proc");
@@ -1213,17 +1331,19 @@ bool CompositSimulation::run()
 					//saveToArcgis(mxDownstreamRatio, log_index, "mxDownstreamRatio");
 					//saveToArcgis(mxDownstreamMax, log_index, "mxDownstreamMax");
 					//saveToArcgis(path1, log_index, "path1");
-					saveToArcgis(channelHeads, log_index, "channelHeads");
-					saveToArcgis(channelHeadMx, log_index, "channelHeadMx");
+					//saveToArcgis(channelHeads, log_index, "channelHeads");
+					//saveToArcgis(channelHeadMx, log_index, "channelHeadMx");
 					
 					//saveToArcgis(streams, log_index, "streams");
 					saveToArcgis(pits,log_index,"pits");
 					saveToArcgis(path1,log_index,"path1");
 					saveToArcgis(pitCatchments,log_index,"pitCatchments");
-					saveToArcgis(mxSedInFluvial, log_index, "mxSedInFluvial");
+					//saveToArcgis(mxSedInFluvial, log_index, "mxSedInFluvial");
 					saveToArcgis(mxSedOutFluvial, log_index, "mxSedOutFluvial");
-					saveToArcgis(mxSedFluvialDifference, log_index, "mxSedFluvialDifference");
+					//saveToArcgis(mxSedFluvialDifference, log_index, "mxSedFluvialDifference");
 					saveToArcgis(mxSedFluvialDifferenceRatio, log_index, "mxSedFluvialDifferenceRatio");
+					saveToArcgis(numValveA, log_index, "numValveA");
+					
 					++log_index;
 		}
 		iteration_nr++;

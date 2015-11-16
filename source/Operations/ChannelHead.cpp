@@ -319,4 +319,9 @@ double ChannelHeadTracker::channelShift() const
 	return _channelShift;
 }
 
+const DblRasterMx & ChannelHeadTracker::prevChannels() const
+{
+	return _prevChannels;
+}
+
 }

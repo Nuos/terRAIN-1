@@ -257,10 +257,11 @@ public:
 			}
 	
 		}
-
+		char buffer[256];
 		for ( i = startRowIndex; i < endRowIndex; i++){
 			for ( j = startColIndex; j < endColIndex; j++ ) {
-				os <<std::setw(12)<<" "<< _mx(i,j);
+				sprintf(buffer, "%f ", _mx(i,j));
+				os << buffer;
 			}
 			os<<std::endl;
 		}

@@ -787,7 +787,7 @@ public:
 							 chainCodeData.getByChainCode(6) +
 							 chainCodeData.getByChainCode(8);
 
-		return sumCardinal + sumDiagonal*SQRT2REC;
+		return sumCardinal + sumDiagonal*SQRT2;
 	
 	}
 };
